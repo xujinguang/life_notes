@@ -3,3 +3,6 @@
 降低client-go版本，它又跟自己的api版本不兼容。。。
 
 按照官方指引，还是要使用0.x.y版本，然后切换到go.1.14版本
+
+## 参考文档
+[code-generator使用](https://tangxusc.github.io/blog/2019/05/code-generator%E4%BD%BF%E7%94%A8/)
