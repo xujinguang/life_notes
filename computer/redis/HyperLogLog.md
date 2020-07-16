@@ -74,17 +74,19 @@ HyperLogLog数组大小$$m$$, 数组记为M$$
 
 已知输入值$$v$$,哈希函数$$h$$:
 
-$$\begin{equation} \begin{aligned} b&=\log_2^m\\x&=h(v)\\j &= 1 + \langle x_1,x_2,\cdots,x_b\rangle \\ w&=x_{b+1}x_{b+2}\cdots\\M[j]&=\max(M[j],\theta(w)) \end{aligned} \end{equation}$$
+<img src="https://render.githubusercontent.com/render/math?math=\large \begin{equation} \begin{aligned} b%26=\log_2^m\\x%26=h(v)\\j %26= 1 + \langle x_1,x_2,\cdots,x_b\rangle \\ w%26=x_{b+1}x_{b+2}\cdots\\M[j]%26=\max(M[j],\theta(w)) \end{aligned} \end{equation}">
+
+注：github展示的方法，将&替换%26,以图片展示
 
 数学中的计算从`1`开始，不是计算机的`0`下标开始. 计算` b`为了取得哈希值的高位作为数组下标索引`j`。取低`bit`位中前导0最大的数目$$\theta(w)$$,取最大值设置$$M[j]$$.
 
 #### Count
 
-$$\begin{equation} \begin{aligned} Z&=\left(\sum_{j=1}^m{\frac{1}{2^{M[j]}}}\right)^{-1} \\ \alpha_m&=\left(m \int_0^\infty\left(\log_2^{\left(\frac{2 + u}{1+u}\right)}\right)^mdu\right)^{-1}\\E&=\alpha_m m^2 Z \end{aligned} \end{equation} $$
+<img src="https://render.githubusercontent.com/render/math?math=\large\begin{equation} \begin{aligned} Z%26=\left(\sum_{j=1}^m{\frac{1}{2^{M[j]}}}\right)^{-1} \\ \alpha_m%26=\left(m \int_0^\infty\left(\log_2^{\left(\frac{2 + u}{1+u}\right)}\right)^mdu\right)^{-1}\\E%26=\alpha_m m^2 Z \end{aligned} \end{equation} ">
 
 #### Merge
 
-$$hll_union[j] = \max(hll_1[j],hll_2[j]),j = 1,2,\cdots$$
+<img src="https://render.githubusercontent.com/render/math?math=\large hll_union[j] = \max(hll_1[j],hll_2[j]),j = 1,2,\cdots">
 
 对应元素取最大值
 
@@ -100,7 +102,9 @@ pf是算法发明人的`Philippe Flajolet`的首字母。
 
 #### 12KB
 
-redis中实现用的$$2^{14}=16384$$个桶，每个桶占用 `6`个`bit`,为什么是6个。因为redis将value哈希成`64bit`值，分桶占去14个，剩余50个bit，最坏情况下，低位第一个1出现在第50个bit，那么需要最少6bit ：$$2^{6}=64 > 50$$ 来表示这个位置。所以每个桶用6bit。最后的大小：$$\frac{2^{14} \times 6  (bits)}{2^{13}} = 2 \times 6(KB) = 12KB$$ 
+redis中实现用的$$2^{14}=16384$$个桶，每个桶占用 `6`个`bit`,为什么是6个。因为redis将value哈希成`64bit`值，分桶占去14个，剩余50个bit，最坏情况下，低位第一个1出现在第50个bit，那么需要最少6bit ：$$2^{6}=64 > 50$$ 来表示这个位置。所以每个桶用6bit。最后的大小
+
+<img src="https://render.githubusercontent.com/render/math?math=\large \frac{2^{14} \times 6  (bits)}{2^{13}} = 2 \times 6(KB) = 12KB">
 
 ### 参考资料
 
