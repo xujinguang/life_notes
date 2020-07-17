@@ -1,5 +1,7 @@
-# 常见问题
-## Pod长期处于Pending
+## 常见问题
+
+### Pod长期处于Pending
+
 ```sh
 kubectrl describe pod/node xxx
 ```
@@ -14,7 +16,7 @@ Events:
 查看pod信息，查看选择器是否正确
 nodeSelector/nodeName是否正确
 
-## Readiness probe failed: HTTP probe failed with statuscode: 503
+### Readiness probe failed: HTTP probe failed with statuscode: 503
 
 ```sh
   Normal   Scheduled              10m                  default-scheduler      Successfully assigned istio-ingressgateway-645bfd8ddb-jzkm5 to 172.16.16.14

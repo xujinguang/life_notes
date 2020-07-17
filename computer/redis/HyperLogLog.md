@@ -86,7 +86,7 @@ HyperLogLog数组大小$$m$$, 数组记为M$$
 
 #### Merge
 
-<img src="https://render.githubusercontent.com/render/math?math=\large hll_union[j] = \max(hll_1[j],hll_2[j]),j = 1,2,\cdots">
+<img src="https://render.githubusercontent.com/render/math?math=\large hll_union[j] = \max(hll_1[j],hll_2[j]),j = 1,2,\cdots" alt="hll_union[j] = \max(hll_1[j],hll_2[j]),j = 1,2,\cdots">
 
 对应元素取最大值
 
