@@ -867,5 +867,82 @@ using NetworkFilterNames = ConstSingleton<NetworkFilterNameValues>;
 
 
 
+### 段错误
 
+```shell
+2020-07-23T02:59:39.441617Z     critical        envoy backtrace Caught Segmentation fault, suspect faulting address 0x374
+2020-07-23T02:59:39.441703Z     critical        envoy backtrace Backtrace (use tools/stack_decode.py to get line numbers):
+2020-07-23T02:59:39.441752Z     critical        envoy backtrace Envoy version: 3aaff15a85a5c0cc5c23635d4b858eee001df836/1.15.0-dev/Clean/RELEASE/BoringSSL
+2020-07-23T02:59:39.442138Z     critical        envoy backtrace #0: __restore_rt [0x7f53d388b8a0]
+2020-07-23T02:59:39.534222Z     critical        envoy backtrace #1: Envoy::Router::Filter::decodeData() [0x55e5fde26516]
+2020-07-23T02:59:39.542064Z     critical        envoy backtrace #2: Envoy::Http::AsyncStreamImpl::sendData() [0x55e5fde1d5f1]
+2020-07-23T02:59:39.550356Z     critical        envoy backtrace #3: Envoy::Grpc::AsyncStreamImpl::closeStream() [0x55e5fde17374]
+2020-07-23T02:59:39.559161Z     critical        envoy backtrace #4: Envoy::Extensions::Common::Wasm::Context::grpcClose() [0x55e5fce11057]
+2020-07-23T02:59:39.568031Z     critical        envoy backtrace #5: proxy_wasm::exports::grpc_close() [0x55e5fcf512c7]
+2020-07-23T02:59:39.620008Z     critical        envoy backtrace #6: proxy_wasm::(anonymous namespace)::V8::registerHostFunctionImpl<>()::{lambda()#1}::__invoke() [0x55e5fcf78571]
+2020-07-23T02:59:39.628901Z     critical        envoy backtrace #7: wasm::FuncData::v8_callback() [0x55e5fcf87a5f]
+2020-07-23T02:59:39.629324Z     critical        envoy backtrace #8: [0x17a638901ddd]
+2020-07-23T02:59:39.629824Z     critical        envoy backtrace #9: [0x17a6384ea32f]
+2020-07-23T02:59:39.630269Z     critical        envoy backtrace #10: [0x17a6384eeae6]
+2020-07-23T02:59:39.630731Z     critical        envoy backtrace #11: [0x17a6384d5026]
+2020-07-23T02:59:39.631187Z     critical        envoy backtrace #12: [0x1baf00083851]
+2020-07-23T02:59:39.639116Z     critical        envoy backtrace #13: v8::internal::Execution::CallWasm() [0x55e5fd0652c3]
+2020-07-23T02:59:39.648181Z     critical        envoy backtrace #14: wasm::Func::call() [0x55e5fcf86db5]
+2020-07-23T02:59:39.657178Z     critical        envoy backtrace #15: std::__1::__function::__func<>::operator()() [0x55e5fcf746c5]
+2020-07-23T02:59:39.665901Z     critical        envoy backtrace #16: proxy_wasm::ContextBase::onGrpcClose() [0x55e5fcf4b23a]
+2020-07-23T02:59:39.718678Z     critical        envoy backtrace #17: Envoy::Extensions::Common::Wasm::Context::onGrpcCloseWrapper() [0x55e5fce10c39]
+2020-07-23T02:59:39.726213Z     critical        envoy backtrace #18: Envoy::Extensions::Common::Wasm::Context::GrpcStreamClientHandler::onRemoteClose() [0x55e5fce1633d]
+2020-07-23T02:59:39.734126Z     critical        envoy backtrace #19: Envoy::Grpc::AsyncStreamImpl::onTrailers() [0x55e5fde1704b]
+2020-07-23T02:59:39.741744Z     critical        envoy backtrace #20: Envoy::Grpc::AsyncStreamImpl::onHeaders() [0x55e5fde16ceb]
+2020-07-23T02:59:39.750337Z     critical        envoy backtrace #21: Envoy::Http::AsyncStreamImpl::encodeHeaders() [0x55e5fde1c768]
+2020-07-23T02:59:39.758046Z     critical        envoy backtrace #22: Envoy::Http::Utility::sendLocalReply() [0x55e5fdf4ac2a]
+2020-07-23T02:59:39.765573Z     critical        envoy backtrace #23: Envoy::Http::AsyncStreamImpl::sendLocalReply() [0x55e5fde1e566]
+2020-07-23T02:59:39.818718Z     critical        envoy backtrace #24: Envoy::Router::Filter::onUpstreamAbort() [0x55e5fde28801]
+2020-07-23T02:59:39.826282Z     critical        envoy backtrace #25: Envoy::Router::Filter::onUpstreamReset() [0x55e5fde28e3d]
+2020-07-23T02:59:39.835171Z     critical        envoy backtrace #26: Envoy::Router::UpstreamRequest::onResetStream() [0x55e5fde32c6e]
+2020-07-23T02:59:39.843943Z     critical        envoy backtrace #27: Envoy::Http::Http1::ClientConnectionImpl::onResetStream() [0x55e5fdeb0e3f]
+2020-07-23T02:59:39.852665Z     critical        envoy backtrace #28: Envoy::Http::CodecClient::onEvent() [0x55e5fde0c707]
+2020-07-23T02:59:39.861580Z     critical        envoy backtrace #29: Envoy::Network::ConnectionImplBase::raiseConnectionEvent() [0x55e5fdc2d2ed]
+2020-07-23T02:59:39.868347Z     critical        envoy backtrace #30: Envoy::Network::ConnectionImpl::closeSocket() [0x55e5fdc278f2]
+2020-07-23T02:59:39.918618Z     critical        envoy backtrace #31: Envoy::Network::ConnectionImpl::close() [0x55e5fdc27586]
+2020-07-23T02:59:39.925827Z     critical        envoy backtrace #32: Envoy::Http::CodecClient::onData() [0x55e5fde0cc8d]
+2020-07-23T02:59:39.933464Z     critical        envoy backtrace #33: Envoy::Http::CodecClient::CodecReadFilter::onData() [0x55e5fde0d8dd]
+2020-07-23T02:59:39.942119Z     critical        envoy backtrace #34: Envoy::Network::FilterManagerImpl::onContinueReading() [0x55e5fdc2da63]
+2020-07-23T02:59:39.949501Z     critical        envoy backtrace #35: Envoy::Network::ConnectionImpl::onReadReady() [0x55e5fdc29bee]
+2020-07-23T02:59:39.957126Z     critical        envoy backtrace #36: Envoy::Network::ConnectionImpl::onFileEvent() [0x55e5fdc28ced]
+2020-07-23T02:59:39.966116Z     critical        envoy backtrace #37: Envoy::Event::FileEventImpl::assignEvents()::$_0::__invoke() [0x55e5fdc23180]
+2020-07-23T02:59:40.022911Z     critical        envoy backtrace #38: event_process_active_single_queue [0x55e5fe081c4b]
+2020-07-23T02:59:40.031746Z     critical        envoy backtrace #39: event_base_loop [0x55e5fe0804ce]
+2020-07-23T02:59:40.040703Z     critical        envoy backtrace #40: Envoy::Server::InstanceImpl::run() [0x55e5fdba96ba]
+2020-07-23T02:59:40.049321Z     critical        envoy backtrace #41: Envoy::MainCommonBase::run() [0x55e5fc62c918]
+2020-07-23T02:59:40.056968Z     critical        envoy backtrace #42: Envoy::MainCommon::main() [0x55e5fc62d0f5]
+2020-07-23T02:59:40.065817Z     critical        envoy backtrace #43: main [0x55e5fc62b31c]
+2020-07-23T02:59:40.066113Z     critical        envoy backtrace #44: __libc_start_main [0x7f53d34a9b97]
+```
+
+
+
+```shell
+2020-07-23T08:34:50.068865Z     debug   envoy wasm      wasm log demofilter: [./extensions/mixless/demo/plugin.h:145]::onConfigure() grpcStreamHandler, result: Ok
+2020-07-23T08:34:50.069849Z     trace   envoy grpc      handleOpCompletion op=0 ok=true inflight=1
+2020-07-23T08:34:51.843911Z     debug   envoy conn_handler      [C2] new connection
+2020-07-23T08:34:51.843957Z     trace   envoy connection        [C2] socket event: 2
+2020-07-23T08:34:51.843961Z     trace   envoy connection        [C2] write ready
+2020-07-23T08:34:51.843964Z     trace   envoy connection        [C2] socket event: 3
+2020-07-23T08:34:51.843966Z     trace   envoy connection        [C2] write ready
+2020-07-23T08:34:51.843969Z     trace   envoy connection        [C2] read ready. dispatch_buffered_data=false
+2020-07-23T08:34:51.843978Z     trace   envoy connection        [C2] read returns: 129
+2020-07-23T08:34:51.843987Z     trace   envoy connection        [C2] read error: Resource temporarily unavailable
+2020-07-23T08:34:51.844033Z     trace   envoy http      [C2] parsing 129 bytes
+2020-07-23T08:34:51.844040Z     trace   envoy http      [C2] message begin
+2020-07-23T08:34:51.844046Z     debug   envoy http      [C2] new stream
+2020-07-23T08:34:51.844069Z     trace   envoy http      [C2] completed header: key=Host value=172.16.0.161:15021
+2020-07-23T08:34:51.844089Z     trace   envoy http      [C2] completed header: key=User-Agent value=kube-probe/1.16+
+2020-07-23T08:34:51.844097Z     trace   envoy http      [C2] completed header: key=Accept-Encoding value=gzip
+2020-07-23T08:34:51.844115Z     trace   envoy http      [C2] onHeadersCompleteBase
+2020-07-23T08:34:51.844118Z     trace   envoy http      [C2] completed header: key=Connection value=close
+2020-07-23T08:34:51.844127Z     trace   envoy http      [C2] Server: onHeadersComplete size=4
+2020-07-23T08:34:51.844141Z     trace   envoy http      [C2] message complete
+2020-07-23T08:34:51.844146Z     trace   envoy connection        [C2] readDisable: disable=true disable_count=0 state=0 buffer_length=129
+```
 
