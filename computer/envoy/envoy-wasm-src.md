@@ -92,7 +92,7 @@ std::unique_ptr<Server::InstanceImpl> server_;
 //返回 Instance 实例指针,因为unique不能作为参数传递，需要get
 ```
 
-#####hook(*sever)
+#### hook(*sever)
 
 ```c++
 //hook的原型
@@ -102,7 +102,7 @@ static int main(int argc, char** argv, PostServerHook hook = nullptr);
 //options.mode() == Server::Mode::Validate时，sever=nullptr，同样不执行
 ```
 
-####main_common->run() 
+#### main_common->run() 
 
 ```c++
 //base_.run()->	MainCommonBase::run()
@@ -728,6 +728,25 @@ message TypedExtensionConfig {
 初始化链路
 
 ```c++
+   HttpConnectionManagerConfig::HttpConnectionManagerConfig() {
+       const auto& filters = config.http_filters(); //config:envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager
+  for (int32_t i = 0; i < filters.size(); i++) {
+    processFilter(filters[i], i, "http", filter_factories_, "http", i == filters.size() - 1);
+  }
+   }
+void HttpConnectionManagerConfig::processFilter(...) {
+     Http::FilterFactoryCb callback =
+      factory.createFilterFactoryFromProto(*message, stats_prefix_, context_);
+     
+      filter_factories.push_back(callback);//std::list<Http::FilterFactoryCb>&
+   }
+Network::FilterFactoryC createFilterFactoryFromProto(const Protobuf::Message& proto_config,
+                               Server::Configuration::FactoryContext& context) override {
+    return createFilterFactoryFromProtoTyped(MessageUtil::downcastAndValidate<const ConfigProto&>(
+                                                 proto_config, context.messageValidationVisitor()),
+                                             context);
+  }
+
 Http::FilterFactoryCb WasmFilterConfig::createFilterFactoryFromProtoTyped(
     const envoy::extensions::filters::http::wasm::v3::Wasm& proto_config, const std::string&,
     Server::Configuration::FactoryContext& context) {
