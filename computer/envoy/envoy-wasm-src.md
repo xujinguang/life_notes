@@ -865,9 +865,9 @@ using NetworkFilterNames = ConstSingleton<NetworkFilterNameValues>;
 
 ```
 
+## gRPC
 
-
-### 段错误
+### Debug Log
 
 ```shell
 2020-07-23T02:59:39.441617Z     critical        envoy backtrace Caught Segmentation fault, suspect faulting address 0x374
@@ -945,4 +945,43 @@ using NetworkFilterNames = ConstSingleton<NetworkFilterNameValues>;
 2020-07-23T08:34:51.844141Z     trace   envoy http      [C2] message complete
 2020-07-23T08:34:51.844146Z     trace   envoy connection        [C2] readDisable: disable=true disable_count=0 state=0 buffer_length=129
 ```
+
+
+
+```c++
+source/common/grpc/google_async_client_impl.h
+class GoogleAsyncRequestImpl : public AsyncRequest,
+                               public GoogleAsyncStreamImpl,
+                               RawAsyncStreamCallbacks {
+public:
+  GoogleAsyncRequestImpl(GoogleAsyncClientImpl& parent, absl::string_view service_full_name,
+                         absl::string_view method_name, Buffer::InstancePtr request,
+                         RawAsyncRequestCallbacks& callbacks, Tracing::Span& parent_span,
+                         const Http::AsyncClient::RequestOptions& options);
+
+  void initialize(bool buffer_body_for_retry) override;
+
+  // Grpc::AsyncRequest
+  void cancel() override;
+
+private:
+  // Grpc::RawAsyncStreamCallbacks
+  void onCreateInitialMetadata(Http::RequestHeaderMap& metadata) override;
+  void onReceiveInitialMetadata(Http::ResponseHeaderMapPtr&&) override;
+  bool onReceiveMessageRaw(Buffer::InstancePtr&& response) override;
+  void onReceiveTrailingMetadata(Http::ResponseTrailerMapPtr&&) override;
+  void onRemoteClose(Grpc::Status::GrpcStatus status, const std::string& message) override;
+
+  Buffer::InstancePtr request_;
+  RawAsyncRequestCallbacks& callbacks_;
+  Tracing::SpanPtr current_span_;
+  Buffer::InstancePtr response_;
+};
+```
+
+
+
+## 参考资料
+
+[envoy-1.15](https://www.bookstack.cn/read/envoy-1.15/07535d2404dfe4ec.md)
 
