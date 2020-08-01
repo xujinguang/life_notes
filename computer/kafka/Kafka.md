@@ -1,5 +1,15 @@
 ## Kafka
 
+### 1. 基本概念
+
+kafka里面有四个核心元素：生产者-Productor，消费者-Consumer，代理-broker和zookeeper集群。
+
+它们的作用：
+
+1. 
+
+### 实战
+
 ### 生产者
 
 ```sh
