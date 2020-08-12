@@ -531,7 +531,7 @@ spec:
             subFilter:
               name: envoy.router
     patch:
-      operation: INSERT_BEFORE
+      operation: INSERT_BEFOREs
       value:
         typed_config:
           '@type': type.googleapis.com/udpa.type.v1.TypedStruct
@@ -977,6 +977,153 @@ private:
   Tracing::SpanPtr current_span_;
   Buffer::InstancePtr response_;
 };
+```
+
+
+
+
+
+## Envoy
+
+```shell
+# docker run -it --rm envoyproxy/envoy:v1.14-latest envoy --help
+
+USAGE: 
+
+   envoy  [--disable-extensions <string>] [--use-fake-symbol-table <bool>]
+          [--cpuset-threads] [--enable-mutex-tracing]
+          [--disable-hot-restart] [--max-obj-name-len <uint64_t>]
+          [--max-stats <uint64_t>] [--mode <string>]
+          [--parent-shutdown-time-s <uint32_t>] [--drain-time-s <uint32_t>]
+          [--file-flush-interval-msec <uint32_t>] [--service-zone <string>]
+          [--service-node <string>] [--service-cluster <string>]
+          [--hot-restart-version] [--restart-epoch <uint32_t>] [--log-path
+          <string>] [--log-format-escaped] [--log-format <string>]
+          [--component-log-level <string>] [-l <string>]
+          [--local-address-ip-version <string>] [--admin-address-path
+          <string>] [--reject-unknown-dynamic-fields]
+          [--allow-unknown-static-fields] [--allow-unknown-fields]
+          [--config-yaml <string>] [-c <string>] [--concurrency <uint32_t>]
+          [--base-id <uint32_t>] [--] [--version] [-h]
+
+
+Where: 
+
+   --disable-extensions <string>
+     Comma-separated list of extensions to disable
+
+   --use-fake-symbol-table <bool>
+     Use fake symbol table implementation
+
+   --cpuset-threads
+     Get the default # of worker threads from cpuset size
+
+   --enable-mutex-tracing
+     Enable mutex contention tracing functionality
+
+   --disable-hot-restart
+     Disable hot restart functionality
+
+   --max-obj-name-len <uint64_t>
+     Deprecated and unused; please do not specify.
+
+   --max-stats <uint64_t>
+     Deprecated and unused; please do not specify.
+
+   --mode <string>
+     One of 'serve' (default; validate configs and then serve traffic
+     normally) or 'validate' (validate configs and exit).
+
+   --parent-shutdown-time-s <uint32_t>
+     Hot restart parent shutdown time in seconds
+
+   --drain-time-s <uint32_t>
+     Hot restart and LDS removal drain time in seconds
+
+   --file-flush-interval-msec <uint32_t>
+     Interval for log flushing in msec
+
+   --service-zone <string>
+     Zone name #Enovy部署的可用区
+
+   --service-node <string>
+     Node name #envoy的本地节点名称
+
+   --service-cluster <string>
+     Cluster name #envoy本地服务集群
+
+   --hot-restart-version
+     hot restart compatibility version
+
+   --restart-epoch <uint32_t>
+     hot restart epoch #热重启周期
+
+   --log-path <string>
+     Path to logfile
+
+   --log-format-escaped
+     Escape c-style escape sequences in the application logs
+
+   --log-format <string>
+     Log message format in spdlog syntax (see
+     https://github.com/gabime/spdlog/wiki/3.-Custom-formatting)
+
+     Default is "[%Y-%m-%d %T.%e][%t][%l][%n] %v"
+
+   --component-log-level <string>
+     Comma separated list of component log levels. For example
+     upstream:debug,config:trace
+
+   -l <string>,  --log-level <string>
+     Log levels: [trace][debug][info][warning
+     |warn][error][critical][off]
+
+     Default is [info]
+
+   --local-address-ip-version <string>
+     The local IP address version (v4 or v6).
+
+   --admin-address-path <string>
+     Admin address path
+
+   --reject-unknown-dynamic-fields
+     reject unknown fields in dynamic configuration
+
+   --allow-unknown-static-fields
+     allow unknown fields in static configuration
+
+   --allow-unknown-fields
+     allow unknown fields in static configuration (DEPRECATED)
+
+   --config-yaml <string>
+     Inline YAML configuration, merges with the contents of --config-path
+
+   -c <string>,  --config-path <string>
+     Path to configuration file
+
+   --concurrency <uint32_t>
+     # of worker threads to run
+
+   --base-id <uint32_t>
+     base ID so that multiple envoys can run on the same host if needed
+
+   --,  --ignore_rest
+     Ignores the rest of the labeled arguments following this flag.
+
+   --version
+     Displays version information and exits.
+
+   -h,  --help
+     Displays usage information and exits.
+
+
+   envoy
+```
+
+如果直接启动会报没有配置文件的错误
+
+```she
+error initializing configuration '': At least one of --config-path or --config-yaml or Options::configProto() should be non-empty
 ```
 
 

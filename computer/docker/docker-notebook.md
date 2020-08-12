@@ -123,6 +123,7 @@ $ docker search name #搜索镜像
 ```shell
 $ docker commit ID name #将容器ID提交为镜像name
 $ docker build #Dockerfile
+$ docker images --tree #查看image之间的树形家族结构
 ```
 
 ​	第一个命令是对已有的容器执行某些操作之后，执行commit从而形成一个新的镜像。commit的只是创建的容器和当前状态之间差异的部分。commit可以使用`-m`提交镜像信息；`-a`作者信息。
