@@ -68,14 +68,138 @@ windows每个{}都独占一行，和不换行对比起来就像word的单倍行�
 
 
 
-### 1.2 不允许存在无用的临时变量
+### 1.2 不允许存在无用的包和临时变量
 
-注意是临时变量。全局变量呢？可以。
+ go不允许代码中存在无用的临时变量，以及无用的package。如果存在，会有如下编译错误。
+
+```sh
+# command-line-arguments
+./example.go:7:2: imported and not used: "time"
+./example.go:21:2: test declared but not used
+```
+
+提示存在导入未使用的包和声明未使用的变量。注意是临时变量，全局变量呢？可以。
+
+有时候导入的包可能会使用它的初始化操作，并不直接引入其他内容，这是可是用使用空标识符_(即下划线)来限定。注意一旦用空标识符限定包，那么此包在当前文件里将不可用。对于函数调用返回值，不想关注部分返回值的时候，也可以使用空标识符来忽略它。
+
+```go
+import(
+    "fmt"
+	_ "time" //忽略time包
+)
+func main(){
+    ret, _ := CallFunc() //忽略第二个返回值
+    fmt.Println(ret) //ret使用了，不会报未使用错误
+    fmt.Println(time.Now().Unix()) //error: time未定义
+}
+```
 
 
 
- go不允许存在无用的临时变量，不然会出现编译错误，解决方案是使用空标识符，它的名字是_(即下划线)。空标识符可以用在任何语法需要变量名但是程序逻辑不需要的地方。
-Go里面不存在未初始化变量。否则编译不通过。 
+### 1.3 switch-case 叠落
+
+C/C++当中switch的case语句后面需要break或者return语句来保证只执行当前匹配的case语句块，否则会从匹配的case开始一直执行直到swtich的语句块末尾。像这样
+
+```c
+switch(state) {
+    case 1:
+        printf("打开\n");
+    case 2:
+        printf("关闭\n");
+    default:
+        printf("unkown\n");
+}
+```
+
+如果state=1，输出
+
+```sh
+打开
+关闭
+unknown
+```
+
+state=2，输出
+
+```sh
+关闭
+unkown
+```
+
+state不匹配任何case时执行default语句输出unknown。
+
+在这个示例中各种state状态之间是互斥的，因此，同时输出多个状态字符串是错误的。在每个case语句加上break或者return语句即可解决。
+
+但是对于某些应用场景比如多个case具有相同操作，或者前后case存在相互依赖关系，可以从某个case开始执行到switch结束，那么这种自动“叠落”的操作是十分方便的。比如执行某个操作具有5个阶段，分别是阶段1,2,3,4,5.其中3,4阶段操作相同，那么就可以根据实际stage所处阶段来开始执行后续阶段的操作。
+
+```c
+switch(stage) { //分阶段执行
+    case 1: 
+        printf("执行步骤1\n");
+    case 2:
+        printf("执行步骤2\n");
+    case 3:
+    case 4:
+        printf("执行剩余步骤\n");
+    default:
+        printf("操作完成\n");
+}
+```
+
+如此对于操作在某个阶段失败后，发起重试然后继续执行，使得最终操作完成这类操作十分有用。因此，在C/C++中，case没有break/return语句，这不一定是错误，这要看具体的应用场景而定。使用方式上用户具有很强的灵活性。但是这种灵活性，也存在不直观和潜在的隐患，比如上面互斥的state状态，因为忘记break而出错。
+
+从直观的使用方式上来讲，某个case匹配，就应该只执行当前case的语句块，不应该叠落执行。而如果需要叠落执行，应该有用户来显示告知。这样歧义性更小。Go就是这么做的。
+
+Go默认是case语句块之间是不会叠落执行的，如果要想共用语句块，使用逗号表达式或者fallthrough语句,当然break特性还是保留的。
+
+比如Go大小端判断接口
+
+```go
+func hostByteOrder() binary.ByteOrder {
+        switch runtime.GOARCH {
+        case "386", "amd64", "amd64p32",
+                "arm", "arm64",
+                "mipsle", "mips64le", "mips64p32le",
+                "ppc64le",
+                "riscv", "riscv64":
+                return binary.LittleEndian
+        case "armbe", "arm64be",
+                "mips", "mips64", "mips64p32",
+                "ppc", "ppc64",
+                "s390", "s390x",
+                "sparc", "sparc64":
+                return binary.BigEndian
+        }
+        panic("unknown architecture")
+}
+```
+
+比如编译器解析字符串操作接口
+
+```go
+func lexQuote(l *lexer) stateFn {
+Loop:
+        for {
+                switch l.next() {
+                case '\\':
+                        if r := l.next(); r != eof && r != '\n' {
+                                break
+                        }
+                        fallthrough
+                case eof, '\n':
+                        return l.errorf("unterminated quoted string")
+                case '"':
+                        break Loop
+                }
+        }
+        l.emit(itemString)
+        return lexInsideAction
+}
+```
+
+
+
+
 
 ### 可变参数接口类型
 

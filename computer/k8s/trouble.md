@@ -379,3 +379,65 @@ kubectl delete Secret istio-ca-secret -n istio-system
 >在Istio比较早期的版本中，自签名Ca证书有效期只有一年时间，如果使用老版本Istio超过一年，就会遇到这个问题。当证书过期之后，我们创建新的虚拟服务或者pod，都会因为CA证书过期而失败。而这时如果Citadel重启，它会读取过期证书并验证其有效性，就会出现以上Cidatel不能启动的问题。
 
 > 这个Ca证书在K8s集群中，是以istio-ca-secret命名的secret，我们可以使用openssl解码证书来查看有效期。这个问题比较简单的处理方法，就是删除这个Secret，并重启Citadel，这时Citadel会走向新建和验证自签名Ca证书的逻辑并刷新Ca证书。或者参考以下官网处理方式。
+
+
+
+### 4. 重复打标签
+
+使用--overwrite覆盖写即可
+
+### 5.  cm重复创建报错
+
+```sh
+[root@VM-0-14-centos cluster-istio]# kubectl create configmap node-grafana-configuration-dashboards --from-file=./node_exporter -n istio-system
+Error from server (AlreadyExists): configmaps "node-grafana-configuration-dashboards" already exists
+```
+
+采用一个替换的策略
+
+```sh
+kubectl create configmap node-grafana-configuration-dashboards --from-file=./node_exporter -n istio-system -o yaml --dry-run |
+kubectl replace -f -
+```
+
+可以解决重入问题，但是首次创建有问题
+
+```sh
+[root@VM-0-14-centos cluster-istio]# kubectl delete cm node-grafana-configuration-dashboards -n istio-system
+configmap "node-grafana-configuration-dashboards" deleted
+[root@VM-0-14-centos cluster-istio]# kubectl create configmap node-grafana-configuration-dashboards --from-file=./node_exporter -n istio-system -o yaml --dry-run |
+kubectl replace -f -
+Error from server (NotFound): error when replacing "STDIN": configmaps "node-grafana-configuration-dashboards" not found
+```
+
+[stackoverflow上找一种策略](https://stackoverflow.com/questions/38216278/update-k8s-configmap-or-secret-without-deleting-the-existing-one)
+
+```sh
+kubectl create configmap node-grafana-configuration-dashboards --from-file=./node_exporter -n istio-system -o yaml --dry-run | kubectl apply -f - configmap/node-grafana-configuration-dashboards configured
+```
+
+不好使。
+
+github issues问题，有位给了一个技巧，用上下文。但是--context我们不支持（未使用）。
+
+```sh
+kubectl  create configmap node-grafana-configuration-dashboards --from-file=./node_exporter -n istio-system -o yaml --dry-run | kubectl apply -f -
+```
+
+too long
+
+```sh
+The ConfigMap "node-grafana-configuration-dashboards" is invalid: metadata.annotations: Too long: must have at most 262144 characters
+```
+
+这个文件有50w字符。
+
+不是办法的办法，就是用||运算符了
+
+```sh
+kubectl create configmap node-grafana-configuration-dashboards --from-file=./node_exporter -n istio-system || kubectl create configmap node-grafana-configuration-dashboards --from-file=./node_exporter -n istio-system -o yaml --dry-run |
+kubectl replace -f -
+```
+
+
+
