@@ -441,3 +441,7 @@ kubectl replace -f -
 
 
 
+###6.Envoy proxy is NOT ready: config not received from Pilot (is Pilot running?): cds updates: 0 successful, 0 rejected; lds updates: 0 successful, 0 rejected
+
+Envoy收不到pilot的配置，导致无法正常启动。导致read探测接口异常。出现pod在run，但是ready为0.
+
