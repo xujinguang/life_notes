@@ -127,3 +127,33 @@ spec: #描述状态
 
 那么value结构难道自由发挥不成？当然不是，上面已经提到它要根据具体的过滤器而定。这个借口定义在envoy的相关proto文件里。已wasm为例，就是在api/envoy/extensions/wasm/v3/wasm.proto中
 
+
+
+```sh
+kubectl get envoyfilter auth-wasm -n istio-system -o yaml
+istioctl pc listener istio-ingressgateway-689dd678b4-bmsxp  --address 0.0.0.0 --port 15001 -o json
+kubectl scale deployment/istio-ingressgateway --replicas=0 -n istio-system
+```
+
+
+
+## 探索
+
+1.7 网关端口变更 https://istio.io/latest/news/releases/1.7.x/announcing-1.7/upgrade-notes/
+
+```shell
+2020-08-26T10:41:49.596907Z     debug   envoy wasm      WasmVm created envoy.wasm.runtime.null now active
+2020-08-26T10:41:49.596918Z     debug   envoy wasm      Thread-Local Wasm created 12 now active
+2020-08-26T10:41:49.640016Z     debug   envoy wasm      WasmVm created envoy.wasm.runtime.v8 now active
+2020-08-26T10:41:49.640434Z     debug   envoy wasm      Base Wasm created 13 now active
+2020-08-26T10:41:49.821640Z     trace   envoy wasm      Failed to load Wasm module due to a missing import: env.proxy_continue_stream
+2020-08-26T10:41:49.821726Z     error   envoy wasm      Wasm VM failed Wasm module is missing malloc function.
+2020-08-26T10:41:49.821739Z     error   envoy wasm      Wasm VM failed Failed to initialize Wasm code
+2020-08-26T10:41:49.821745Z     debug   envoy wasm      ~Wasm 12 remaining active
+2020-08-26T10:41:49.827734Z     debug   envoy wasm      ~WasmVm envoy.wasm.runtime.v8 12 remaining active
+2020-08-26T10:41:49.827865Z     trace   envoy wasm      Unable to create Wasm
+2020-08-26T10:41:49.877958Z     debug   envoy init      init manager RDS local-init-manager http.80 destroyed
+2020-08-26T10:41:49.877987Z     debug   envoy init      target RdsRouteConfigSubscription local-init-target http.80 destroyed
+2020-08-26T10:41:49.877991Z     debug   envoy init      RDS local-init-watcher http.80 destroyed
+```
+
