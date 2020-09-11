@@ -22,5 +22,7 @@ Pod 封装了应用程序容器、存储资源、唯一网络 IP 以及控制容
 
 Kubernetes 使用了一个更高级的称为 *控制器* 的抽象，由它处理相对可丢弃的 Pod 实例的管理工作。 因此，虽然可以直接使用 Pod，但在 Kubernetes 中，更为常见的是使用控制器管理 Pod。
 
-控制器包括：Deployment，StatefulSet,DaemonSet
+控制器包括：Deployment，StatefulSet, DaemonSet
+
+
 

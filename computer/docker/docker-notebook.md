@@ -363,6 +363,92 @@ overly 底层还可以嵌套挂载，上层文件会覆盖同名的下层文件�
 
 
 
+### HTTP API
+
+[Docker Registry HTTP API V2 文档](https://docs.docker.com/registry/spec/api/) 
+
+```shell
+for i in {1..7}
+do
+curl "https://registry.hub.docker.com/v2/repositories/istio/proxyv2/tags?page=$i" | jq '."results"[] | {name: .["name"], sha: .images[0]["digest"]}' >> tags.txt
+done
+```
+
+[jq 手册](https://stedolan.github.io/jq/tutorial/)
+
+#### 1.获取所有镜像并生成pod的yaml文件
+
+```shell
+for i in {1..7}
+do
+curl "https://registry.hub.docker.com/v2/repositories/istio/proxyv2/tags?page=$i" | jq '."results"[] | .["name"], .images[0]["digest"]' | while read TAG
+do
+	read SHA
+	TAG=`echo $TAG |sed 's/\"//g'`
+	SHA=`echo $SHA |sed 's/\"//g'`
+	echo $TAG","$SHA
+	sed "s/proxyv2:1.6.0/proxyv2:$TAG/g" foo.yaml > tmp.yaml
+	sed "s/sha256:821cc14ad9a29a2cafb9e351d42096455c868f3e628376f1d0e1763c3ce72ca6/$SHA/g"   tmp.yaml > "foo-$TAG".yaml
+done
+done
+```
+
+```shell
+for i in {1..7}
+do
+curl "https://registry.hub.docker.com/v2/repositories/istio/proxyv2/tags?page=$i" | jq '."results"[] | .["name"], .images[0]["digest"]' >> image.tag
+done
+```
+
+
+
+#### 2. 逐个测试
+
+```shell
+ls foo-1.6.0-distroless.yaml | while read YAML
+do 
+	echo "TestResult" > result.txt
+	echo "start test $YAML:"
+	kubectl apply -f $YAML
+	echo $YAML >> result.txt
+	sleep 1s
+	#重启istiod
+	kubectl scale deployment/foo-v1 -n bookinfo --replicas=0
+	kubectl scale deployment/foo-v1 -n bookinfo --replicas=1
+	kubectl scale deployment/istiod --replicas=0 -n istio-system
+	kubectl scale deployment/istiod --replicas=1 -n istio-system
+	#检测是否成功
+	while 1
+	do
+		echo "restart istiod pod"
+		sleep 3s
+		istiod=`kubectl get pods -n istio-system |  grep istiod | grep Running | wc -l`
+		if [[ $istiod == 1 ]]
+		then
+			break
+		fi
+	done
+	#pod=`kubectl get pods --field-selector=status.phase==Running -n istio-system -o=jsonpath='{range .items[*]}{.metadata.name}'`
+	gateway=`kubectl get pods --field-selector=status.phase==Running -n istio-system -l app=istio-ingressgateway -o=jsonpath='{.items[0].metadata.name}'`
+	kubectl logs -f $gateway -n istio-system | grep "Segmentation fault" >> result.txt
+	curl -i http://109.244.194.125/ping -H 'Token: abc'
+	sleep 1s
+done
+```
+
+#### 3. 生成yaml
+
+```shell
+cat image.tag | while read TAG
+do
+    read SHA
+    foo=`kubectl get pods --field-selector=status.phase==Running -n bookinfo -o=jsonpath='{.items[0].metadata.name}'`
+    kubectl get po $foo -n bookinfo -o yaml |sed '/^  uid:/d;/resourceVersion/d;/selfLink/d;/kubectl.kubernetes.io\/last-applied-configuration/d;' | sed '5,5d' | sed '/status:$/,$d' | sed "s/proxyv2:1.*$/proxyv2:$TAG/g"  > foo-$TAG.yaml
+done
+```
+
+
+
 
 
 
