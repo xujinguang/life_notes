@@ -17,3 +17,8 @@
 1. [istio数据流向图](https://drive.google.com/file/d/19ed3_tkjf6RgGboxllMdt_Ytd5_cocib/view) - 以istio的bookinfo示例，图解数据流
 2. [《Istio流量管理实现机制深度解析》](https://zhaohuabing.com/post/2018-09-25-istio-traffic-management-impl-intro/#%E9%80%9A%E8%BF%87%E7%AE%A1%E7%90%86%E6%8E%A5%E5%8F%A3%E8%8E%B7%E5%8F%96%E5%AE%8C%E6%95%B4%E9%85%8D%E7%BD%AE) - sidecar的启动和原理
 3. [《Debugging Envoy and Istiod》](https://istio.io/latest/docs/ops/diagnostic-tools/proxy-cmd/) - 官网debug指引
+
+## Docker
+
+\[1\] [谁是Docker容器的init(1)进程](http://shareinto.github.io/2019/01/30/docker-init(1)/)
+

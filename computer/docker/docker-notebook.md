@@ -405,38 +405,109 @@ done
 #### 2. 逐个测试
 
 ```shell
-ls foo-1.6.0-distroless.yaml | while read YAML
+#!/bin/bash
+#ls foo-1.*.yaml | while read YAML
+#ls foo-1.6.7.yaml | while read YAML
+head image.tag | while read TAG
 do 
-	echo "TestResult" > result.txt
-	echo "start test $YAML:"
-	kubectl apply -f $YAML
-	echo $YAML >> result.txt
-	sleep 1s
-	#重启istiod
+	read SHA
+	echo $TAG$SHA
+	echo "restart foo pod"
 	kubectl scale deployment/foo-v1 -n bookinfo --replicas=0
 	kubectl scale deployment/foo-v1 -n bookinfo --replicas=1
-	kubectl scale deployment/istiod --replicas=0 -n istio-system
-	kubectl scale deployment/istiod --replicas=1 -n istio-system
-	#检测是否成功
-	while 1
+	foo=""
+    while [[ $foo != "1" ]]
+    do
+		echo "foo retaring"
+        sleep 2s
+        foo=`kubectl get pods -n bookinfo |  grep foo | grep Running | grep "2/2" | wc -l`
+    done
+
+	echo "gen foo yaml"
+	kubectl get po -n bookinfo
+	foo=`kubectl get pods --field-selector=status.phase==Running -n bookinfo -o=jsonpath='{.items[0].metadata.name}'`
+	echo $foo
+	#continue
+	#kubectl get po $foo -o yaml | sed "s/proxyv2:1.*$/proxyv2:$TAG/g" | sed "s/sha256:.*$/$SHA/g" > foo-$TAG.yaml
+	kubectl get po $foo -n bookinfo -o yaml |sed '/^  uid:/d;/resourceVersion/d;/selfLink/d;/kubectl.kubernetes.io\/last-applied-configuration/d;' | sed '5,5d' | sed '/status:$/,$d' | sed "s/proxyv2:1.*$/proxyv2:$TAG/g"  > foo-$TAG.yaml
+
+    echo "apply: $TAG"
+    kubectl apply -f foo-$TAG.yaml
+    echo $TAG", "$SHA >> result.txt
+
+	sleep 3s
+
+	echo "restart istiod pod"
+    kubectl scale deployment/istiod --replicas=0 -n istio-system
+    kubectl scale deployment/istiod --replicas=1 -n istio-system
+	istiod=""
+    while [[ $istiod != "1" ]]
+    do
+		echo "istiod retaring"
+        sleep 1s
+        istiod=`kubectl get pods -n istio-system |  grep istiod | grep Running | wc -l`
+    done
+
+	envoy=""
+	times=0
+	while [[ $envoy != "1" ]]
 	do
-		echo "restart istiod pod"
-		sleep 3s
-		istiod=`kubectl get pods -n istio-system |  grep istiod | grep Running | wc -l`
-		if [[ $istiod == 1 ]]
+		let times=times+1
+		if ( $times -eq 10 )
+		then
+			break
+		fi
+		echo "upgrade envoy"
+		sleep 2s
+		kubectl describe pod $foo -n bookinfo | sed '1,/^Events/d' 
+		envoy=`istioctl version | grep $TAG | wc -l`
+	done
+	if ( $times -eq 10 )
+	then
+		echo "this proxy fail"
+		kubectl describe pod $foo -n bookinfo | sed '1,/^Events/d' >> result.txt
+		#continue
+	fi
+	echo "---change envoy------------------" >> result.txt
+	istioctl version >> result.txt
+
+    #pod=`kubectl get pods --field-selector=status.phase==Running -n istio-system -o=jsonpath='{range .items[*]}{.metadata.name}'`
+
+	echo "get log"
+    #gateway=`kubectl get pods --field-selector=status.phase==Running -n istio-system -l app=istio-ingressgateway -o=jsonpath='{.items[0].metadata.name}'`
+    #kubectl logs -f $gateway -n istio-system --tail=100 | grep "Segmentation fault" >> result.txt &
+
+	echo "send http request"
+    curl -i http://109.244.194.125/ping -H 'Token: abc'
+	times=0
+	while [ $? -ne 0 ]
+	do
+		let times=times+1
+		sleep 1s
+		echo "retry send ping"
+		curl -i http://109.244.194.125/ping -H 'Token: abc'
+		if ( $times -gt 10 )
 		then
 			break
 		fi
 	done
-	#pod=`kubectl get pods --field-selector=status.phase==Running -n istio-system -o=jsonpath='{range .items[*]}{.metadata.name}'`
-	gateway=`kubectl get pods --field-selector=status.phase==Running -n istio-system -l app=istio-ingressgateway -o=jsonpath='{.items[0].metadata.name}'`
-	kubectl logs -f $gateway -n istio-system | grep "Segmentation fault" >> result.txt
-	curl -i http://109.244.194.125/ping -H 'Token: abc'
-	sleep 1s
+
+	sleep 2s
+	echo "[curl req]------------------------" >> result.txt
+	curl -i http://109.244.194.125/ping -H 'Token: abc' >> result.txt
+	rsp=`curl http://109.244.194.125/ping -H 'Token: abc'`
+	if [[ $rsp == "no healthy upstream" ]]
+	then
+		echo "[istio-proxy]------------------------" >> result.txt
+		kubectl logs  $foo -n bookinfo -c istio-proxy --tail=20 | grep error >> result.txt
+		echo "-------------------------------------" >> result.txt
+	fi
+	echo >>result.txt
+    sleep 3s
 done
 ```
 
-#### 3. 生成yaml
+#### 3. 生成proxy yaml
 
 ```shell
 cat image.tag | while read TAG
@@ -447,7 +518,32 @@ do
 done
 ```
 
+#### 4. ingressgateway yaml
 
+```shell
+cat image.tag | while read TAG
+do
+    read SHA
+    gw=`kubectl get pods --field-selector=status.phase==Running -l app=istio-ingressgateway -n istio-system -o=jsonpath='{.items[0].metadata.name}'`
+    kubectl get deployment -n istio-system istio-ingressgateway -o yaml |sed '6,7d;/^  uid:/d;/resourceVersion/d;/selfLink/d;' | sed '/status:$/,$d' | sed "s/ccr.ccs.tencentyun.com.*$/docker.io\/istio\/proxyv2:$TAG/g" | sed "s/proxyv2:.*$/proxyv2:$TAG/g"  > gw-proxy/gw-$TAG.yaml
+done
+```
+
+#### 5.手动
+
+```shell
+kubectl scale deployment/istiod --replicas=0 -n istio-system && kubectl scale deployment/istiod --replicas=1 -n istio-system
+foo=`kubectl get pods --field-selector=status.phase==Running -n bookinfo -o=jsonpath='{.items[0].metadata.name}'`
+kubectl get po $foo -n bookinfo -o yaml |sed '/^  uid:/d;/resourceVersion/d;/selfLink/d;/kubectl.kubernetes.io\/last-applied-configuration/d;' | sed '5,5d' 
+kubectl describe pod $foo -n bookinfo
+kubectl logs -f $foo -c istio-proxy -n bookinfo
+curl -i http://109.244.194.125/ping -H 'Token: abc'
+
+
+kubectl scale deployment/istio-ingressgateway --replicas=0 -n istio-system && kubectl scale deployment/istio-ingressgateway --replicas=1 -n istio-system
+gw=`kubectl get pods --field-selector=status.phase==Running -l app=istio-ingressgateway -n istio-system -o=jsonpath='{.items[0].metadata.name}'`
+kubectl describe pod $gw -n istio-system
+```
 
 
 
