@@ -1,7 +1,7 @@
 ## LB
 
 1. [《Introduction to modern network load balancing and proxying》](https://blog.envoyproxy.io/introduction-to-modern-network-load-balancing-and-proxying-a57f6ff80236)
-2. 
+2. [《LVS中文站点》](http://zh.linuxvirtualserver.org/)
 
 
 
