@@ -22,3 +22,13 @@
 
 \[1\] [谁是Docker容器的init(1)进程](http://shareinto.github.io/2019/01/30/docker-init(1)/)
 
+
+
+### Go
+
+[1] [golang笔记](https://draveness.me/golang/)
+
+### 算法
+
+[1] [算法动图](http://thesecretlivesofdata.com/raft/)
+
