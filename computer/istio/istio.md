@@ -339,11 +339,37 @@ webhooks: #配置一个或多个webhook
 
 15014是debug端口
 
-proxy默认是localhost:15000地址，需要登录pod才能访问。
+proxy默认是localhost:15000地址，需要	登录pod才能访问。
 
 ```shell
 kubectl exec productpage-v1-797898bc54-hnd8v  -c istio-proxy curl http://localhost:15000/help
 ```
 
+#### 抽象模型
 
+对不同的服务注册中心（Kubernetes、consul） 的支持，需要对不同的输入来源的数据有一个统一的存储格式。 它包括信息： HostName（[service](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#service) 名称）、Ports（[service](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#service) 端口）、Address（[service](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#service)ClusterIP）、Resolution （负载均衡策略） 等
 
+#### 平台适配器 
+
+既然是抽象模型，那么它就是统一的。无法八门的注册中心需要适配它，显然不可能。所以中间需要转化操作，这就是平台适配器，实现服务注册中心数据到抽象模型之间的数据转换。比如k8s，consul的适配器将注册中心的服务信息获取到然后转换成抽象模型。
+
+#### xDS API
+
+目前Istio采用的数据平面是Envoy，抽象模型获取到的数据需要提供给数据平面。Pilot](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#pilot) 使用了一套起源于 [Envoy](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#envoy) 项目的标准数据面 API 来将服务信息和流量规则下发到数据面的 [sidecar](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#sidecar)中。这套标准数据面 API，也叫 xDS。
+
+#### user API
+
+[Pilot](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#pilot) 还定义了一套用户 API， 用户 API 提供了面向业务的高层抽象，可以被运维人员理解和使用。
+
+运维人员使用该 API 定义流量规则并下发到 [Pilot](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#pilot) ，这些规则被 [Pilot](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#pilot) 翻译成数据面的配置，再通过标准数据面 API 分发到 [sidecar](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#sidecar) 实例，可以在运行期对微服务的流量进行控制和调整。
+
+通过运用不同的流量规则，可以对网格中微服务进行精细化的流量控制，如按版本分流、断路器、故障注入、灰度发布等。	
+
+![pilot架构](https://www.servicemesher.com/istio-handbook/images/pilot.png)
+
+- Discovery [service](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#service)：即 [pilot](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#pilot)-discovery，主要功能是从 [Service](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#service) provider（如 kubernetes 或者 consul ）中获取服务信息，从 Kubernetes API Server 中获取流量规则（Kubernetes [CRD](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#crd) Resource），并将服务信息和流量规则转化为数据面可以理解的格式，通过标准的数据面 API 下发到网格中的各个 [sidecar](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#sidecar)中。
+- agent：即 [pilot](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#pilot)-agent 组件，该进程根据 Kubernetes API Server 中的配置信息生成 [Envoy](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#envoy) 的配置文件，负责启动、监控 [sidecar](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#sidecar) 进程。
+- proxy：既 [sidecar](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#sidecar) proxy，是所有服务的流量代理，直接连接 [pilot](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#pilot)-discovery ，间接地从 Kubernetes 等服务注册中心获取集群中微服务的注册情况。
+- [service](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#service) A/B：使用了 [Istio](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#istio) 的应用，如 [Service](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#service) A/B，的进出网络流量会被 proxy 接管。
+
+https://www.servicemesher.com/istio-handbook/concepts/pilot.html?q=
