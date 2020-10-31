@@ -494,6 +494,102 @@ a, b = 1, 2
 fmt.Println( a-b) //输出 18446744073709551615
 ```
 
+### 2.2 slice和append
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+        s1 := make([]int, 5)
+        s2 := make([]int, 0, 5)
+        fmt.Printf("s1=%d, s2=%d\n", len(s1), len(s2))
+        s1 = append(s1, 1)
+        s2 = append(s2, 1)
+        fmt.Printf("s1=%d, s2=%d\n", len(s1), len(s2))
+}
+```
+
+```sh
+s1=5, s2=0
+s1=6, s2=1
+```
+
+指定长度，append后长度加1。
+
+### 2.3 slice和map的区别
+
+map拷贝，则底层数据一致。slice拷贝，如果长度不变则底层数据一致，否则，是两个完全不同的slice
+
+```go
+func testMapSlice() {
+        s := make([]int, 0, 3)
+        s = append(s, 1)
+        s1 := s
+        fmt.Printf("s=%v, s1=%v\n", s, s1)
+        s = append(s, 2)
+        fmt.Printf("s=%v, s1=%v\n", s, s1)
+
+        m := make(map[string]int)
+        m["e1"] = 10
+        m1 := m
+        fmt.Printf("m=%v, m1=%v\n", m, m1)
+        m["e2"] = 20
+        fmt.Printf("m=%v, m1=%v\n", m, m1)
+}
+```
+
+结果
+
+```sh
+s=[1], s1=[1]
+s=[1 2], s1=[1] #s和s1是两个对象
+m=map[e1:10], m1=map[e1:10]
+m=map[e1:10 e2:20], m1=map[e1:10 e2:20]
+```
+
+### 2.4 []byte和string仅转换类型
+
+ string 可看做 [2]uintptr，而 []byte可看作 [3]uintptr，便于编写代码，无需额外定义结构类型。如此，str2bytes 只需构建 [3]uintptr{ptr, len, len}，而 bytes2str 更简单，直接转换指针类型，忽略掉 cap 即可 
+
+```go
+func str2bytes(s string) []byte {
+    x := (*[2]uintptr)(unsafe.Pointer(&s))
+    h := [3]uintptr{x[0], x[1], x[1]}
+    return *(*[]byte)(unsafe.Pointer(&h))
+}
+func bytes2str(b []byte) string {
+    return *(*string)(unsafe.Pointer(&b))
+}
+```
+
+### 2.5 指针接收者
+
+ 若使用值接收者，那么 `Scale` 方法会对原始 `Vertex` 值的副本进行操作。（对于函数的其它参数也是如此。）`Scale` 方法必须用指针接受者来更改 `main` 函数中声明的 `Vertex` 的值。 
+
+### 2.6 类型断言
+
+**类型断言** 提供了访问接口值底层具体值的方式。
+
+```
+t := i.(T)
+```
+
+该语句断言接口值 `i` 保存了具体类型 `T`，并将其底层类型为 `T` 的值赋予变量 `t`。
+
+若 `i` 并未保存 `T` 类型的值，该语句就会触发一个恐慌。
+
+为了 **判断** 一个接口值是否保存了一个特定的类型，类型断言可返回两个值：其底层值以及一个报告断言是否成功的布尔值。
+
+```
+t, ok := i.(T)
+```
+
+若 `i` 保存了一个 `T`，那么 `t` 将会是其底层值，而 `ok` 为 `true`。
+
+否则，`ok` 将为 `false` 而 `t` 将为 `T` 类型的零值，程序并不会产生
+
 
 
 ### 可变参数接口类型

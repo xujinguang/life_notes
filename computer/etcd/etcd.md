@@ -32,3 +32,4 @@ etcd就是它的可选实现之一。除此之外，可以使用zookeeper，redi
 ### 参考资料
 
 【1】[etcd](https://juejin.im/post/6844903970461351944)
+

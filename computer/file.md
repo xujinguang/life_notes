@@ -32,3 +32,5 @@
 
 [1] [算法动图](http://thesecretlivesofdata.com/raft/)
 
+[2] [raft论文翻译](https://www.jianshu.com/p/2a2ba021f721)
+

@@ -22,4 +22,3 @@ LVS通过工作于内核的ipvs模块来实现功能，其主要工作于netfilt
 6.  带复制的基于局部性最少链接(Locality-BasedLeastConnectionswithReplicationScheduling) 
 7.  目标地址散列调度(DestinationHashingScheduling)
 8.  源地址散列调度(SourceHashingScheduling) 
-
