@@ -373,3 +373,42 @@ kubectl exec productpage-v1-797898bc54-hnd8v  -c istio-proxy curl http://localho
 - [service](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#service) A/B：使用了 [Istio](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#istio) 的应用，如 [Service](https://www.servicemesher.com/istio-handbook/GLOSSARY.html#service) A/B，的进出网络流量会被 proxy 接管。
 
 https://www.servicemesher.com/istio-handbook/concepts/pilot.html?q=
+
+
+
+### pilot-discovery代码剖析
+
+/Users/kowalskixu/Desktop/work/develop/service-mesh/src/istio.io/istio/pilot/cmd/pilot-discovery/main.go
+
+```go
+// Create the stop channel for all of the servers.
+			stop := make(chan struct{})
+
+			// Create the server for the discovery service.
+			discoveryServer, err := bootstrap.NewServer(serverArgs) //创建discoveryServer实例
+			if err != nil {
+				return fmt.Errorf("failed to create discovery service: %v", err)
+			}
+
+			// Start the server
+			if err := discoveryServer.Start(stop); err != nil {
+				return fmt.Errorf("failed to start discovery service: %v", err)
+			}
+		
+			cmd.WaitSignal(stop)
+			// Wait until we shut down. In theory this could block forever; in practice we will get
+			// forcibly shut down after 30s in Kubernetes.
+			discoveryServer.WaitUntilCompletion()
+```
+
+
+
+/Users/kowalskixu/Desktop/work/develop/service-mesh/src/istio.io/istio/pilot/pkg/bootstrap/server.go
+
+```go
+func NewServer(args *PilotArgs) (*Server, error) {
+}
+```
+
+
+
