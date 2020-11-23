@@ -169,16 +169,85 @@ kubernetes-希腊单词，舵手。由于单词10个字符太长，不好书写�
 
 <img src="./image/k8s.png" style="zoom:50%;" />
 
+#### 2.2.1 控制平面组件
+
+一般运行在同一个Node上
+
+1. kube-apiserver:资源以RESTful API的方式提供管理，也是唯一和etcd交互的组件，可以多实例；
+2. etcd:分布式一致性和高可用性的键值存储数据库
+3. kube-scheduler： 它负责在Kubernetes集群中为一个Pod资源对象找到合适的节点并在该节点上运行
+4. kube-controller-manager：节点控制器，副本控制器，端点控制器，服务帐户和令牌控制器等等。
+
+#### 2.2.2 Node组件
+
+1. kubelet：用来接收、处理、上报kube-apiserver组件下发的任务。kubelet进程启动时会向kube-apiserver注册节点自身信息。它主要负责所在节点（Node）上的Pod资源对象的管理
+2. kube-proxy：集群中每个节点上运行的网络代理
+3. continer runtime: 负责运行容器的软件
+
+#### 2.2.3 CLI
+
+1. kubectl: 官方CLI，用于和API-server交互
+2. client-go :  CLI库，提供开发者二次开发，kubectl就是基于此实现
+3. web dashboard
+
 ### 2.3 kubernetes核心概念
 
-k8s的核心概念涉及以下几个部分：
+k8s的核心抽象概念包括以下几个部分：
 
-1. pod
-2. API-server
-3. 控制器
-4. 存储和配置
-5. 安全
-6. 网络
+1. 容器
+2. 工作负载：pod，控制器
+3. 服务，负载均衡
+4. 策略
+5. 存储和配置
+6. 安全
+7. 网络
+8. 调度和驱逐
+9. 扩展k8s
+
+### 2.4 kubernets资源
+
+k8s的控制面的核心是API-server，它提供HTTP API，以供用户、集群中的不同部分和集群外部组件相互通信。注意这句话中的三个客体。对于用户来说，就是通过API来查询和操作k8s对象。使用kubectl官方客户端，然后k8s的资源以yaml或者json声明形式描述，一般包括以下5个部分
+
+```yaml
+apiVersion: v1 #资源版本
+kind: Pod #资源类型
+metadata: #资源元数据，名称，命令空间，标签关于容器
+spec: #实际的pod说明
+status: #pod的当前信息
+```
+
+apiVersion 以URL的方式指定，格式是：API资源分组/资源版本，资源分组不一定有，但是资源版本必须指定。资源版本分为三类：alpha，beta和不包括前面两个的稳定版本。	
+
+kind指定资源类型。
+
+metadata资源相关的重要的三个字段：
+
+```yaml
+metadata:
+	label: #用于帅选资源
+	annotations: #注解，比label大，可以包括特殊字符或结构化内容
+	owerreference: #资源所有者，归属类，用于反查对象
+```
+
+```shell
+$ kubectl get pods --show-labels # -l key=value 标签过滤，多个是与的关系，或的关系使用in
+$ kubectl label pods ${POD} key=value #--overwrite
+$ kubectl label pods ${POD} key- #取消标签
+```
+
+#### 2.4.1 命令和声明的区别
+
+资源的控制有两种方式，命令方式和声明的方式
+
+| 分类   | 命令                                    | 声明                                                 |
+| ------ | --------------------------------------- | ---------------------------------------------------- |
+| 示例   | 滚/过来/放下/站住                       | 距离我3km/需要近距离依靠/今年KPI达到100亿            |
+| 特点   | 精确的，必须的，一蹴而就的              | 模糊的，没有硬性要求的，逐渐收敛的                   |
+| 失败   | 1. 可重入性 - 重试；2.不可重入-数据修正 | 自身可重入，可反复重入：说一百遍100亿目标还是100亿！ |
+| 成功   | 无状态，需要额外的操作日志              | 自身具有状态信息                                     |
+| 多操作 | 不可重入的需要加锁                      | 多个操作可以合并                                     |
+
+
 
 ### 2.4 Pod
 
@@ -246,36 +315,26 @@ status: #pod的当前信息
 ```shell
 $ kubectl apply -f pod.yaml #创建
 $ kubectl get po {POD} #查询 -w -o yaml
-$ kubectl replace -f {POD}.yaml #替换 --force 强制
+$ kubectl replace -f pod.yaml #替换 --force 强制
 $ kubectl logs {POD} #pod日志
 $ kubectl delete {POD} #删除pod
 ```
 
+### 2.5 控制器
+
+![](./image/controller-loop.png)
+
+给定一个预期状态输入Spec到Controller, 然后它实际系统的反馈的Status执行diff操作，然后根据具体状态差异转换成相应的Op操作下发给System，系统的然后将自己的实时状态通过输出到传感器。如此迭代循环，直到Status收敛到Spec为止。
+
+![](E:\myself\life_notes\computer\k8s\image\sensor.png)
 
 
-#### 2.4.5 pod机制
 
-共享网络，存储，
+![](E:\myself\life_notes\computer\k8s\image\sensor-example1.png)
 
-
-
-
-
-
+![](E:\myself\life_notes\computer\k8s\image\sensor-example2.png)
 
 ### pod及节点管理
-
-如何通过命令行创建pod
-
-通过yaml文件创建pod及yaml文件的语法
-
-了解pod的镜像下载策略
-
-了解pod重启策略
-
-在pod中运行指定命令
-
-pod中变量的设置
 
 pod的调度策略
 
