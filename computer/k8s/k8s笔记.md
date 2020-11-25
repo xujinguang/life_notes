@@ -206,6 +206,8 @@ k8s的核心抽象概念包括以下几个部分：
 
 ### 2.4 kubernets资源
 
+#### 2.4.1 对象
+
 k8s的控制面的核心是API-server，它提供HTTP API，以供用户、集群中的不同部分和集群外部组件相互通信。注意这句话中的三个客体。对于用户来说，就是通过API来查询和操作k8s对象。使用kubectl官方客户端，然后k8s的资源以yaml或者json声明形式描述，一般包括以下5个部分
 
 ```yaml
@@ -216,7 +218,7 @@ spec: #实际的pod说明
 status: #pod的当前信息
 ```
 
-apiVersion 以URL的方式指定，格式是：API资源分组/资源版本，资源分组不一定有，但是资源版本必须指定。资源版本分为三类：alpha，beta和不包括前面两个的稳定版本。	
+apiVersion 以URL的方式指定，格式是：API资源分组/资源版本，资源分组不一定有，但是资源版本必须指定。资源版本分为三类：alpha，beta和不包括前面两个的稳定版本。	这样做的有个优势，版本共存互不干扰，而且使得API分组。
 
 kind指定资源类型。
 
@@ -235,7 +237,11 @@ $ kubectl label pods ${POD} key=value #--overwrite
 $ kubectl label pods ${POD} key- #取消标签
 ```
 
-#### 2.4.1 命令和声明的区别
+Kubernetes 对象是 “目标性记录” —— 一旦创建对象，Kubernetes 系统将持续工作以确保对象存在。 通过创建对象，本质上是在告知 Kubernetes 系统，所需要的集群工作负载看起来是什么样子的， 这就是 Kubernetes 集群的 **期望状态（Desired State）**，由Spec字段描述。
+
+更多api规范参考[这里](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md)
+
+#### 2.4.2 命令和声明的区别
 
 资源的控制有两种方式，命令方式和声明的方式
 
@@ -322,17 +328,45 @@ $ kubectl delete {POD} #删除pod
 
 ### 2.5 控制器
 
+#### 2.5.1 控制器分类
+
+
+
+#### 2.5.2 控制器原理
+
 ![](./image/controller-loop.png)
 
-给定一个预期状态输入Spec到Controller, 然后它实际系统的反馈的Status执行diff操作，然后根据具体状态差异转换成相应的Op操作下发给System，系统的然后将自己的实时状态通过输出到传感器。如此迭代循环，直到Status收敛到Spec为止。
+给定一个预期状态输入Spec到Controller, 它和系统的反馈的当前Status执行diff操作，然后根据具体状态差异转换成相应的Op操作下发给System，系统的再将结果状态通过输出到传感器。如此迭代循环，直到Status收敛到Spec为止。
 
-![](E:\myself\life_notes\computer\k8s\image\sensor.png)
+这是一个思想流程图，映射成k8s，system就是apiserver, sensor和controller更具体一点就是这个图了
 
+![controller](https://raw.githubusercontent.com/kubernetes/sample-controller/master/docs/images/client-go-controller-interaction.jpeg)
 
+它分为两个部分：client-go和custom controller，图中的每个组件的作用详细说明看[这里](https://github.com/kubernetes/sample-controller/blob/master/docs/controller-client-go.md)
+
+#### 2.5.2 控制器工作示例
+
+阿里云公开课里有个示例，修改rs=2为3，变化过程如图：
 
 ![](E:\myself\life_notes\computer\k8s\image\sensor-example1.png)
 
 ![](E:\myself\life_notes\computer\k8s\image\sensor-example2.png)
+
+#### 2.5.3 控制器源码分析
+
+参考[这里](https://www.huweihuang.com/kubernetes-notes/code-analysis/kube-controller-manager/sharedIndexInformer.html)
+
+#### 2.5. 自定义控制器
+
+这个图片和上面的图本质是一样的，但是更容易理解一点是，蓝色部分是client-go负责，红色部分是业务自己实现的部分。
+
+![](https://res.cloudinary.com/dqxtn0ick/image/upload/v1555472372/article/code-analysis/informer/client-go.png)
+
+[教学视频](https://v.qq.com/x/page/c03641vzw2m.html?start=43)
+
+对于CRD的话，client-go是没有相应的informer和clientset等等的，那么怎么办呢？k8s提供了自动生成工具。
+
+[示例教学](https://tangxusc.github.io/2019/05/code-generator%E4%BD%BF%E7%94%A8/)
 
 ### pod及节点管理
 
