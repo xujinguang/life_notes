@@ -382,7 +382,87 @@ k8s已有的控制器包括如下：
    2. `kubectl get deployment`
    3. `kubectl get rs`
    4. `kubectl describe deployments`
-4. 回滚
+   5. `kubectl rollout history deployment`
+4. 回滚 
+   1. 使用set image
+   2. `kubectl rollout undo deployment` 指定版本--to-revision=x
+5. 缩放 - scale
+6. 暂停/恢复 - `kubectl rollout pause/resume  deployment`
+
+**更新策略：重建和滚动**
+
+- `.spec.strategy.type==Recreate`，在创建新 Pods 之前，所有现有的 Pods 会被杀死。
+- `.spec.strategy.type==RollingUpdate`时，采取 滚动更新的方式更新 Pods。你可以指定 `maxUnavailable` 和 `maxSurge` 来控制滚动更新 过程。
+
+**版本管理**
+
+`.spec.revisionHistoryLimit` 字段以指定保留此 Deployment 的多少个旧有 ReplicaSet。其余的 ReplicaSet 将在后台被垃圾回收。 默认情况下，此值为 10。如果设置0， 意味着将清理所有具有 0 个副本的旧 ReplicaSet。 在这种情况下，无法撤消新的 Deployment 上线
+
+**部署失败常见问题**
+
+- 配额（Quota）不足
+- 就绪探测（Readiness Probe）失败
+- 镜像拉取错误
+- 权限不足
+- 限制范围（Limit Ranges）问题
+- 应用程序运行时的配置错误
+
+##### 2.5.1.4 StatefulSets
+
+StatefulSet 用来管理 Deployment 和扩展一组 Pod，并且能为这些 Pod 提供*序号和唯一性保证*,实现有状态应有的管理。和 Deployment 不同的是，StatefulSet 为它们的每个 Pod 维护了一个固定的 ID。这些 Pod 是基于相同的声明来创建的，但是不能相互替换：无论怎么调度，每个 Pod 都有一个永久不变的 ID。
+
+1. 部署，按照编号依次创建，前驱running或者ready时，才会创建下一个，除非设定并行启动
+2. 缩容- 按照编号逆序删除
+3. 更新 - 同样有两种更新策略：重建和滚动，遵循1,2点
+
+##### 2.5.1.5 DaemonSet
+
+*DaemonSet* 确保全部（或者某些）节点上运行一个 Pod 的副本。 当有节点加入集群时， 也会为他们新增一个 Pod 。 当有节点从集群移除时，这些 Pod 也会被回收。删除 DaemonSet 将会删除它创建的所有 Pod。
+
+使用场景：
+
+- 在每个节点上运行集群守护进程
+- 在每个节点上运行日志收集守护进程
+- 在每个节点上运行监控守护进程
+
+1. 创建部署 - `.spec.selector` 必须填写 Pod 选择算符，而且一旦创建不可修改，否则出现悬挂pod
+
+##### 2.5.1.6 Jobs
+
+​	Job 会创建一个或者多个 Pods，并确保指定数量的 Pods 成功终止。 随着 Pods 成功结束，Job 跟踪记录成功完成的 Pods 个数。 当数量达到指定的成功个数阈值时，任务（即 Job）结束。 删除 Job 的操作会清除所创建的全部 Pods。也可以使用 Job 以并行的方式运行多个 Pod。
+
+- `.spec.selector` 是可选
+- `.spec.completions` 字段设置为非 0 的正数值
+- 不设置，complettion，默认值为 `.spec.parallelism=1`，可以指定并发数
+
+##### 2.5.1.7 CronJob
+
+CronJob 仅负责创建与其调度时间相匹配的 Job，并周期性地在给定的调度时间执行 Job，而 Job 又负责管理其代表的 Pod	
+
+##### 2.5.1.8 垃圾收集
+
+Kubernetes 垃圾收集器的作用是删除某些曾经拥有属主（Owner）但现在不再拥有属主的对象。属主通过资源的`metadata.ownerReferences` 字段指定。比如由 ReplicationController、ReplicaSet、StatefulSet、DaemonSet、Deployment、 Job 和 CronJob 所创建或管理的对象。如果删除对象时，不自动删除它的附属，这些附属被称作 *孤立对象*
+
+在上面rs控制器中提到可以指删除rs而不删除关联的pod，方法就是指定级联参数为false。默认是级联删除。包括2种模式：
+
+1. 前台级联删除
+2. 后台级联删除
+
+两种删除的区别在于删除属主的时候是否立即删除附属资源。前者是先删除附属资源然后在删除属主。后者则只删除属主，让垃圾收集后台删除。可以通过`deleteOptions.propagationPolicy` 字段配置：`Orphan`、`Foreground` 或者 `Background`
+
+##### 2.5.1.9 TTL控制器
+
+TTL 控制器现在只支持 Job。集群操作员可以通过指定 Job 的 `.spec.ttlSecondsAfterFinished`字段来自动清理已结束的作业（`Complete` 或 `Failed`）
+
+##### 2.5.1.10 总结
+
+通过前9个小节每个控制器的介绍，这里做一个总结和对比。
+
+1. 它们都统一的声明式描述资源对象。比如apiVersion,kind,metadata,spec以及运行状态status。
+2. 全部都约束使用selector选择器，有些控制器是必须的，比如，有些是可选的
+3. 每个控制器for不同的场景。当然用途最广的也是最必须的就是ReplicaSet和Deployment控制器。
+4. 垃圾收集是隐藏的，只是在其他控制器中一个配置项而存在。
+5. 
 
 #### 2.5.2 控制器原理
 
@@ -420,19 +500,7 @@ k8s已有的控制器包括如下：
 
 [示例教学](https://tangxusc.github.io/2019/05/code-generator%E4%BD%BF%E7%94%A8/)
 
-### pod及节点管理
 
-pod的调度策略
-
-通过label手动指定pod运行的节点
-
-初始化容器 （init container）
-
-静态pod （static pod）
-
-节点cordon及uncordon管理
-
-节点taint及pod的tolerations
 
 ### **密码管理**
 
@@ -447,22 +515,6 @@ pod的调度策略
 以卷的方式引用configmap
 
 以变量的方式引用configmap
-
-### **deployment**
-
-理解deployment的作用
-
-通过命令行的方式快速deployment
-
-通过YAML方式创建deployment
-
-使用deployment对镜像版本进行升级及回滚
-
-使用deployment管理pod副本数
-
-了解deployment滚动更新
-
-自动水平伸缩HPA
 
 ### **健康性检查**
 
