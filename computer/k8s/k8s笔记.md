@@ -375,8 +375,8 @@ k8s已有的控制器包括如下：
 2. 更新
    1. `kubectl set image deployment/$dep $name=$image --record`
    2. `kubectl edit deployment/$dep`
-   3. 默认情况下，它确保至少所需 Pods 75% 处于运行状态（最大不可用比例 25%）
-   4. 默认情况下，它可确保启动的 Pod 个数比期望个数最多多出 25%
+   3. 默认情况下，它确保至少所需 Pods 75% 处于运行状态（最大不可用比例 25%MaxUnavaliable） 
+   4. 默认情况下，它可确保启动的 Pod 个数比期望个数最多多出 25%  MaxSurge
 3. 查看
    1. `kubectl rollout status deployment/$dep`
    2. `kubectl get deployment`
@@ -393,6 +393,8 @@ k8s已有的控制器包括如下：
 
 - `.spec.strategy.type==Recreate`，在创建新 Pods 之前，所有现有的 Pods 会被杀死。
 - `.spec.strategy.type==RollingUpdate`时，采取 滚动更新的方式更新 Pods。你可以指定 `maxUnavailable` 和 `maxSurge` 来控制滚动更新 过程。
+
+`maxUnavailable`保证了服务的质量。`maxSurge` 保证在资源有限情况的控制。比如资源比较紧张而限制超出的数量。这两个参数需要取得一个平衡。这两个值不能同时为0.
 
 **版本管理**
 
@@ -499,6 +501,8 @@ TTL 控制器现在只支持 Job。集群操作员可以通过指定 Job 的 `.s
 对于CRD的话，client-go是没有相应的informer和clientset等等的，那么怎么办呢？k8s提供了自动生成工具。
 
 [示例教学](https://tangxusc.github.io/2019/05/code-generator%E4%BD%BF%E7%94%A8/)
+
+### 2.6 网络
 
 
 
