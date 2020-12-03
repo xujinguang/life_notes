@@ -502,23 +502,101 @@ TTL 控制器现在只支持 Job。集群操作员可以通过指定 Job 的 `.s
 
 [示例教学](https://tangxusc.github.io/2019/05/code-generator%E4%BD%BF%E7%94%A8/)
 
-### 2.6 网络
+### 2.6  应用配置
 
+#### 2.6.1 ConfigMap
 
+1. 创建 kubectl create configmap NAME DATA， DATA-文件，目录，键值对
+2. 使用 挂载配置文件，环境变量，命令行参数
 
-### **密码管理**
+#### 2.6.2 Secret 
 
-使用secret管理密码
+存储密码等敏感信息，使用base64存储 ， 1MB，
 
-以卷的方式引用secret
+### 2.7 持久化
 
-以变量的方式引用secret
+有两个问题，pod的数据如何持久化以及pod如果通过磁盘实现数据通信？k8s通过Volumes 来解决。
 
-使用configmap管理密码
+#### 2.7.1 持久化的问题
 
-以卷的方式引用configmap
+volumne的类型：
 
-以变量的方式引用configmap
+1. 本地存储 emptydir 、hostpath
+2. 网络存储 out of tree
+3. secret/CM
+4. PV（Persistent Volumes）和PVC
+
+前3点面临问题包括：
+
+1. pod销毁重建后，如何数据复用？
+2. Node节点宕机后，上面的pod需要重建，核心在如何将数据迁移
+3. 同一个pod内容器可以共享，但是多个pod之间如何共享数据？
+4. 数据卷如何做扩展功能？
+
+这些问题导致4的诞生。也是本小节的重点
+
+#### 2.7.2 PVC和PV
+
+有了pv为什么还要有个PVC呢？
+
+1. 职责分离，PVC只负责声明，PV真是的存储管理
+2. PVC简化用户的使用
+3. 二者关系是面向对象的接口和实现
+
+如果实现的呢？分为静态和动态方式创建PV。静态是管理员预先创建PV，然后PVC绑定关系。这样增加了管理员和资源的浪费。最好的方式动态创建PV。方式通过中间模板StorageClass，PVC提交自己的需求，指定SC，k8s结合二者动态生成PV，然后将PVC和PV绑定。后者是用户需要多少资源，则创建多大的PV。PVC是用户感知的需求。管理员只负责StorageClass即可，这个包括具体的存储参数。
+
+```yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: slow-pv
+provisioner: kubernetes.io/aws-ebs #重点：使用哪个卷插件制备 PV，这个插件对于云厂商使用标准库自行开发
+parameters: #制备器的参数，最多支持512，总长度不超过256kB
+  type: gp2
+reclaimPolicy: Retain #PV在PVC删除时的回收策略， Delete 或者 Retain，默认删除
+allowVolumeExpansion: true
+mountOptions:
+  - debug
+volumeBindingMode: Immediate #绑定和制造PV的时刻
+	#Immediate-PVC创建了就立即创建PV并绑定；WaitForFirstConsumer 延迟绑定
+allowedTopologies: #WaitForFirstConsumer时有效，限定允许的拓扑
+- matchLabelExpressions:
+  - key: failure-domain.beta.kubernetes.io/zone
+    values:
+    - us-central1-a
+    - us-central1-b
+```
+
+pvc使用
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: disc-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: slow-pv #指定StorageClass Name
+  resources:
+    requests:
+      storage: 30Gi #声明自己的需求
+```
+
+pod挂载
+
+```yaml
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: disc-pvc #指定pvc
+```
+
+官方也支持很多标准的存储卷。
+
+PV的状态：pending->avaliable->bound->released->deleted/failed
+
+处于released状态的PV无法回到起点的。因此次PV是不可用的，想复用手动新建PV或者不删除PVC。复用PVC，这也是StatefulSet的策略。
 
 ### **健康性检查**
 
