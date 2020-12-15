@@ -38,6 +38,5 @@ sequenceDiagram
     kw->>kw: 剪辑视频
     ks-->>-zs: 回调告知zs, porjectid创建成功或失败
     zs->>zs: 修改项目状态，或者删除记录
-
 ```
 
