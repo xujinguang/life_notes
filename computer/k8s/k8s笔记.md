@@ -50,7 +50,17 @@
 
 第一种方式，实现了一个标准化的构建方式，提供了很多灵活的构建命令，主佳。
 
+* docker 从基础镜像运行一个程序
 
+* 执行一条指令，对容器作出修改
+
+* 执行类似 docker commit的操作，提交一个新的镜像层
+
+* 再基于刚提交的镜像运行一个新容器
+
+* 执行Dockerfile的下一条指令，重复上述操作。直到所有的命令都执行完毕。
+
+  
 
 #### 1.5 Docker容器的生命周期
 
@@ -66,9 +76,29 @@
 
 
 
-### **容器管理**
+### 1.2 容器管理
 
-管理容器常见的命令，包括：查看容器属性，获取shell，
+#### 1.2.1 常用命令
+
+```shell
+$ docker login #登录镜像仓库
+$ docker build  #构建镜像
+$ docker pull #拉取镜像
+$ docker push #推送镜像
+$ docker search #搜索镜像
+$ docker rmi #删除镜像
+$ docker ps #查看容器
+$ docker rm #删除容器
+$ docker run #执行容器
+$ docker stop #停止容器
+$ docker start #启动容器
+$ docker pause #暂停容器
+$ docker exec #执行命令
+```
+
+全部命令参考[官网](https://docs.docker.com/engine/reference/commandline/docker/)
+
+
 
 容器和服务器之间互相拷贝文件，查看容器日志信息
 
