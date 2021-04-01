@@ -1013,5 +1013,110 @@ func (sa *Agent) Start(isSidecar bool, podNamespace string) (*sds.Server, error)
 
 
 
+## 问题定位
+
+### 现象
+
+proxy日志
+
+```yaml
+[2021-02-03 07:43:02.919][17][warning][config] [bazel-out/k8-opt/bin/external/envoy/source/common/config/_virtual_includes/grpc_stream_lib/common/config/grpc_stream.h:86] gRPC config stream closed: 13, 
+[2021-02-03 07:43:05.368][17][warning][misc] [external/envoy/source/common/protobuf/utility.cc:174] Using deprecated option 'envoy.api.v2.Listener.use_original_dst' from file lds.proto. This configuration will be removed from Envoy soon. Please see https://www.envoyproxy.io/docs/envoy/latest/intro/deprecated for details.
+[2021-02-03 07:43:05.373][17][warning][filter] [src/envoy/http/authn/http_filter_factory.cc:102] mTLS PERMISSIVE mode is used, connection can be either plaintext or TLS, and client cert can be omitted. Please consider to upgrade to mTLS STRICT mode for more secure configuration that only allows TLS connection with client cert. See https://istio.io/docs/tasks/security/mtls-migration/
+[2021-02-03 07:43:05.376][17][warning][filter] [src/envoy/http/authn/http_filter_factory.cc:102] mTLS PERMISSIVE mode is used, connection can be either plaintext or TLS, and client cert can be omitted. Please consider to upgrade to mTLS STRICT mode for more secure configuration that only allows TLS connection with client cert. See https://istio.io/docs/tasks/security/mtls-migration/
+[2021-02-03 07:43:05.379][17][warning][filter] [src/envoy/http/authn/http_filter_factory.cc:102] mTLS PERMISSIVE mode is used, connection can be either plaintext or TLS, and client cert can be omitted. Please consider to upgrade to mTLS STRICT mode for more secure configuration that only allows TLS connection with client cert. See https://istio.io/docs/tasks/security/mtls-migration/
+[2021-02-03 07:43:05.381][17][warning][filter] [src/envoy/http/authn/http_filter_factory.cc:102] mTLS PERMISSIVE mode is used, connection can be either plaintext or TLS, and client cert can be omitted. Please consider to upgrade to mTLS STRICT mode for more secure configuration that only allows TLS connection with client cert. See https://istio.io/docs/tasks/security/mtls-migration/
+[2021-02-03 07:43:05.385][17][warning][filter] [src/envoy/http/authn/http_filter_factory.cc:102] mTLS PERMISSIVE mode is used, connection can be either plaintext or TLS, and client cert can be omitted. Please consider to upgrade to mTLS STRICT mode for more secure configuration that only allows TLS connection with client cert. See https://istio.io/docs/tasks/security/mtls-migration/
+[2021-02-03 07:43:05.387][17][warning][filter] [src/envoy/http/authn/http_filter_factory.cc:102] mTLS PERMISSIVE mode is used, connection can be either plaintext or TLS, and client cert can be omitted. Please consider to upgrade to mTLS STRICT mode for more secure configuration that only allows TLS connection with client cert. See https://istio.io/docs/tasks/security/mtls-migration/
+2021-02-03T07:43:05.932974Z     info    Envoy proxy is NOT ready: 3 errors occurred:
+
+* failed checking application ports. listeners="0.0.0.0:15090","10.51.30.216:8080","10.51.31.57:443","10.51.31.39:8080","10.51.30.16:8080","10.51.31.11:443","10.51.31.57:15030","10.51.31.57:15031","10.51.31.105:14268","10.51.30.90:18081","10.51.31.57:15029","10.51.29.82:8080","10.51.30.110:33333","10.51.30.104:8080","10.51.31.178:8080","10.51.31.165:443","10.51.29.234:8080","10.51.29.88:42422","10.51.29.31:16686","10.51.28.81:8080","10.51.28.126:8080","10.51.30.231:8080","10.51.28.1:443","10.51.28.176:15011","10.51.30.118:15443","10.51.31.32:8080","10.51.29.158:8080","10.51.31.57:15443","10.51.30.30:8080","10.51.31.105:14267","10.51.31.242:8080","10.51.29.103:8080","10.51.31.57:15020","10.51.31.57:31400","10.51.28.125:8080","10.51.31.227:5601","10.51.28.154:8080","10.51.29.226:8080","10.51.31.57:15032","10.51.31.249:443","10.51.29.18:8080","10.51.31.162:18081","10.51.31.212:53","10.51.30.118:443","10.51.31.12:8080","10.51.30.90:8080","0.0.0.0:9100","10.51.28.246:9200","10.51.31.162:8080","10.51.29.135:8080","0.0.0.0:80","0.0.0.0:31387","0.0.0.0:8090","0.0.0.0:8060","0.0.0.0:9070","0.0.0.0:9901","0.0.0.0:15004","0.0.0.0:8099","0.0.0.0:8811","0.0.0.0:9999","0.0.0.0:9090","0.0.0.0:18099","0.0.0.0:3000","0.0.0.0:9191","0.0.0.0:9988","0.0.0.0:8080","0.0.0.0:8989","0.0.0.0:12347","0.0.0.0:15014","0.0.0.0:15010","0.0.0.0:18082","0.0.0.0:18098","0.0.0.0:16888","0.0.0.0:8998","0.0.0.0:20001","0.0.0.0:9411","0.0.0.0:9091","0.0.0.0:8999","0.0.0.0:15001","10.51.0.136:9091","10.51.0.136:15004","10.51.0.136:15014"
+* envoy missing listener for inbound application port: 9090
+* envoy missing listener for inbound application port: 8080
+2021-02-03T07:43:07.933619Z     info    Envoy proxy is NOT ready: 3 errors occurred:
+
+* failed checking application ports. listeners="0.0.0.0:15090","10.51.30.216:8080","10.51.31.57:443","10.51.31.39:8080","10.51.30.16:8080","10.51.31.11:443","10.51.31.57:15030","10.51.31.57:15031","10.51.31.105:14268","10.51.30.90:18081","10.51.31.57:15029","10.51.29.82:8080","10.51.30.110:33333","10.51.30.104:8080","10.51.31.178:8080","10.51.31.165:443","10.51.29.234:8080","10.51.29.88:42422","10.51.29.31:16686","10.51.28.81:8080","10.51.28.126:8080","10.51.30.231:8080","10.51.28.1:443","10.51.28.176:15011","10.51.30.118:15443","10.51.31.32:8080","10.51.29.158:8080","10.51.31.57:15443","10.51.30.30:8080","10.51.31.105:14267","10.51.31.242:8080","10.51.29.103:8080","10.51.31.57:15020","10.51.31.57:31400","10.51.28.125:8080","10.51.31.227:5601","10.51.28.154:8080","10.51.29.226:8080","10.51.31.57:15032","10.51.31.249:443","10.51.29.18:8080","10.51.31.162:18081","10.51.31.212:53","10.51.30.118:443","10.51.31.12:8080","10.51.30.90:8080","0.0.0.0:9100","10.51.28.246:9200","10.51.31.162:8080","10.51.29.135:8080","0.0.0.0:80","0.0.0.0:31387","0.0.0.0:8090","0.0.0.0:8060","0.0.0.0:9070","0.0.0.0:9901","0.0.0.0:15004","0.0.0.0:8099","0.0.0.0:8811","0.0.0.0:9999","0.0.0.0:9090","0.0.0.0:18099","0.0.0.0:3000","0.0.0.0:9191","0.0.0.0:9988","0.0.0.0:8080","0.0.0.0:8989","0.0.0.0:12347","0.0.0.0:15014","0.0.0.0:15010","0.0.0.0:18082","0.0.0.0:18098","0.0.0.0:16888","0.0.0.0:8998","0.0.0.0:20001","0.0.0.0:9411","0.0.0.0:9091","0.0.0.0:8999","0.0.0.0:15001","10.51.0.136:9091","10.51.0.136:15004","10.51.0.136:15014"
+* envoy missing listener for inbound application port: 9090
+* envoy missing listener for inbound application port: 8080
+```
+
+
+
+pliot日志
+
+```yaml
+2021-02-03T07:21:34.948272Z     info    ads     Push finished: 12.520048336s {
+    "ProxyStatus": {
+        "pilot_destrule_subsets": {
+            "enroll-platform.enroll.svc.cluster.local": {
+                "message": "Duplicate subset v2 found while merging destination rules for enroll-platform.enroll.svc.cluster.local"
+            },
+            "mini-program.enroll.svc.cluster.local": {
+                "message": "Duplicate subset v2 found while merging destination rules for mini-program.enroll.svc.cluster.local"
+            },
+            "partner-platform.enroll.svc.cluster.local": {
+                "message": "Duplicate subset v2 found while merging destination rules for partner-platform.enroll.svc.cluster.local"
+            }
+        },
+        "pilot_duplicate_envoy_clusters": {
+            "outbound|16888|v2|partner-platform.enroll.svc.cluster.local": {
+                "proxy": "gkt-mini-program-v1-67cf5bd95d-6k9f6.enroll",
+                "message": "Duplicate cluster outbound|16888|v2|partner-platform.enroll.svc.cluster.local found while pushing CDS"
+            },
+            "outbound|8080|v2|enroll-platform.enroll.svc.cluster.local": {
+                "proxy": "gkt-mini-program-v1-67cf5bd95d-6k9f6.enroll",
+                "message": "Duplicate cluster outbound|8080|v2|enroll-platform.enroll.svc.cluster.local found while pushing CDS"
+            },
+            "outbound|8080|v2|mini-program.enroll.svc.cluster.local": {
+                "proxy": "gkt-mini-program-v1-67cf5bd95d-6k9f6.enroll",
+                "message": "Duplicate cluster outbound|8080|v2|mini-program.enroll.svc.cluster.local found while pushing CDS"
+            },
+            "outbound|8080|v2|partner-platform.enroll.svc.cluster.local": {
+                "proxy": "gkt-mini-program-v1-67cf5bd95d-6k9f6.enroll",
+                "message": "Duplicate cluster outbound|8080|v2|partner-platform.enroll.svc.cluster.local found while pushing CDS"
+            },
+            "outbound|8090|v2|enroll-platform.enroll.svc.cluster.local": {
+                "proxy": "gkt-mini-program-v1-67cf5bd95d-6k9f6.enroll",
+                "message": "Duplicate cluster outbound|8090|v2|enroll-platform.enroll.svc.cluster.local found while pushing CDS"
+            },
+            "outbound|9090|v2|mini-program.enroll.svc.cluster.local": {
+                "proxy": "gkt-mini-program-v1-67cf5bd95d-6k9f6.enroll",
+                "message": "Duplicate cluster outbound|9090|v2|mini-program.enroll.svc.cluster.local found while pushing CDS"
+            }
+        },
+         "pilot_eds_no_instances": {
+            "outbound|12347|v1|crm-manager.enroll.svc.cluster.local": {},
+            "outbound|12347||crm-manager.enroll.svc.cluster.local": {},
+            "outbound|16888|v1|enroll-operation-system.enroll.svc.cluster.local": {},
+            "outbound|16888||enroll-operation-system.enroll.svc.cluster.local": {},
+            "outbound|33333||istio-testlb.istio-system.svc.cluster.local": {},
+            "outbound|8080|v1|console.enroll.svc.cluster.local": {},
+            "outbound|8080|v1|crm-manager.enroll.svc.cluster.local": {},
+            "outbound|8080|v2|enroll-platform.enroll.svc.cluster.local": {},
+            "outbound|8080|v2|mini-program.enroll.svc.cluster.local": {},
+            "outbound|8080||crm-manager.enroll.svc.cluster.local": {},
+            "outbound|8090|v2|enroll-platform.enroll.svc.cluster.local": {},
+            "outbound|9090|v1|console.enroll.svc.cluster.local": {},
+            "outbound|9090|v2|mini-program.enroll.svc.cluster.local": {}
+        }
+    },
+    "Start": "2021-02-03T07:21:22.428214417Z",
+    "End": "2021-02-03T07:21:34.948096763Z"
+}
+```
+
+
+
+源码
+
+```go
+CdsGenerator.Generate
+//调用生成
+rawClusters := c.Server.ConfigGenerator.BuildClusters(proxy, push)
+//实现
+func (configgen *ConfigGeneratorImpl) BuildClusters(proxy *model.Proxy, push *model.PushContext) []*cluster.Cluster {
+}
+```
+
 
 

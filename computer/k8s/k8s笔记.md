@@ -628,6 +628,26 @@ PV的状态：pending->avaliable->bound->released->deleted/failed
 
 处于released状态的PV无法回到起点的。因此次PV是不可用的，想复用手动新建PV或者不删除PVC。复用PVC，这也是StatefulSet的策略。
 
+### 3. 服务发现
+
+#### 3.1 为什么需要服务发现
+
+1. pod动态变化，ip不固定
+2. 统一的访问入口和负载均衡
+3. 不同环境下同样的部署拓扑
+
+#### 3.2 service的工作原理
+
+创建一个虚拟IP:port，按照指定的负载均衡将请求路由到后端pod的
+
+服务的类型:clusterIP, NodePort,LoadBalancer，ingress
+
+服务的发现
+
+环境变量
+
+DNS的发现方式
+
 ### **健康性检查**
 
 pod的默认检查策略
@@ -652,17 +672,7 @@ pod的默认检查策略
 
 对比所有这些控制器的区别及应用范围
 
-### **服务发现**
 
-理解service的工作原理
-
-服务的类型:clusterIP, NodePort,LoadBalancer，ingress
-
-服务的发现
-
-环境变量
-
-DNS的发现方式
 
 
 
