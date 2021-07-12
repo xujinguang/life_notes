@@ -1013,6 +1013,45 @@ func (sa *Agent) Start(isSidecar bool, podNamespace string) (*sds.Server, error)
 
 
 
+### istio-ingressgate
+
+```sh
+#k8s service 一般是LoadBalance或者NodePort
+kubectl get svc istio-ingressgateway -n istio-system -o yaml
+#获取istio-system下的pod
+kubectl get pods -n istio-system
+#进入网关容器
+kubectl -n istio-system exec -it <istio-ingressgateway-...> bash
+#执行命令获取envoy的配置
+curl localhost:15000/help
+curl localhost:15000/stats
+curl localhost:15000/listeners
+curl localhost:15000/clusters
+curl localhost:15000/server_info
+#具体信息参考 https://www.envoyproxy.io/docs/envoy/latest/operations/admin
+#查看日志
+kubectl logs istio-ingressgateway-... -n istio-system
+
+#网关
+kubectl get service istio-ingressgateway -n istio-system -o wide
+
+#访问示例
+echo "http://$(kubectl get nodes --selector=kubernetes.io/role!=master -o jsonpath={.items[0].status.addresses[?\(@.type==\"InternalIP\"\)].address}):$(kubectl get svc istio-ingressgateway -n istio-system -o jsonpath='{.spec.ports[1].nodePort}')/productpage"
+
+http://172.16.0.10:30407/productpage
+
+#进入微服务的代理envoy
+kubectl get pods
+kubectl exec -it productpage-v1-... -c istio-proxy  sh
+ps aux
+ls -l /etc/istio/proxy
+cat /etc/istio/proxy/envoy-rev0.json
+
+#参考：https://github.com/layer5io/istio-service-mesh-workshop
+```
+
+
+
 ## 问题定位
 
 ### 现象
