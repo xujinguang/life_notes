@@ -613,7 +613,99 @@ fmt.Println(a...) //输出 1 2 3
 
 在函数调用参数中，数组是值传递，无法通过修改数组类型的参数返回结果
 
+### map未初始化
+
+map定义之后直接使用会报nil 而 panic
+
+```golang
+var kv map[string]string // 未初始化
+val, ok := kv["key"] // panic
+```
+
+map 作为结构体成员的时候，很容易忘记对它的初始化。
+
 ### map遍历时顺序不固定
+
+每次遍历的结果可能不同，不能依靠map的遍历顺序
+
+### 并发读写map不安全
+
+普通的map是并发读写不安全。所谓不安全就是多个线程同时进行读写时，可能导致互相覆盖。
+
+比如线程A读到变量a的值是1，然后进行后续逻辑执行之后再设定2，再写入之前，由于CPU的调度切换，此时另外一个线程B读到1并将它设置为3，然后切换回A继续执行，然后线程A将变量写入2，因此，B的更新被A给覆盖掉了。
+
+有两种普遍的解决办法：互斥锁和乐观锁。前者保证了每一刻只有一个线程读写。也就是A将1变更2完成之后，再运行线程B读写。
+
+比如对map绑定一个sync.RWMutex 
+
+```golang
+type RWMap struct { // 一个读写锁保护的线程安全的map
+    sync.RWMutex // 读写锁保护下面的map字段
+    m map[int]int
+}
+// 新建一个RWMap
+func NewRWMap(n int) *RWMap {
+    return &RWMap{
+        m: make(map[int]int, n),
+    }
+}
+func (m *RWMap) Get(k int) (int, bool) { //从map中读取一个值
+    m.RLock()
+    defer m.RUnlock()
+    v, existed := m.m[k] // 在锁的保护下从map中读取
+    return v, existed
+}
+
+func (m *RWMap) Set(k int, v int) { // 设置一个键值对
+    m.Lock()              // 锁保护
+    defer m.Unlock()
+    m.m[k] = v
+}
+```
+
+当map变得比较大的时候，并发访问量比较大的时候，整个map加锁就就十分低效了。在有些场景里尽量减少临界区里的操作，从而降低加锁的时间。但是对于上面操作逻辑，只有一条语句，显然不能再压缩了。但是把map展开，本质是每个key同时多个线程访问，因此可以从map上解决，比如把加锁粒度缩小到每个key。
+
+```golang
+type Value struct {
+   sync.RWMutex
+   val int
+}
+
+type RWMap struct {
+    m map[int]Value
+}
+```
+
+这个粒度就达到最小了。
+
+但是这个粒度锁个数随kv增加而增大。一个变体就是分片加锁，每个key做一次hash分到对应的桶。每个桶分配一个锁。
+
+```golang
+type SliceMapItem struct {
+  KV map[string]interface{}
+  sync.RWMutex
+}
+
+type SliceMap []*SliceMapItem
+
+func New() SliceMap {
+  sm := make(SliceMap, SLICE_SIZE)
+  for i := 0; i < SLICE_SIZE; i++ {
+    sm[i] = &SliceMapItem{KV: make(map[string]interface{})}
+  }
+  return sm
+}
+
+func (sm SliceMap) GetItem(key string) *SliceMapItem {
+  return sm[atoi(hash(key))%SLICE_SIZE]
+}
+```
+
+
+
+### map扩容按倍增方式缩容空间不变
+
+
 
 ### 返回值被屏蔽
 
