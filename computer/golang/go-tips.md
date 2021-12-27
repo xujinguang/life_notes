@@ -15,7 +15,7 @@ _Let's Go!_
 
 ---
 # Go的历史 [->](https://github.com/golang-design/history#language-design)
-![bg right:50% 100%](./image/go-design.svg) 
+![bg right:50% 70%](./image/go-design.svg) 
 
 ---
 ## Go创造者
@@ -147,7 +147,7 @@ Condition = Expression .
 
 ---
 ## 字符集
-uft-8编码的Unicode
+uft-8编码的Unicode字符集，变长1~4个字节
 ```sh
 newline        = /* the Unicode code point U+000A */ .
 unicode_char   = /* an arbitrary Unicode code point except newline */ .
@@ -222,10 +222,10 @@ func main() {
 - 自上而下 LL  ![right w:200](image/gopher-doc-left.jpg)
   - 从语法树根开始，使用产生式将非终结符号向左展开
   - 实现简单
-- 自下而上 LR, LALR(n)
+
+- 自下而上 LR, LR(n)
   - 从语法树的叶子开始，匹配产生式从右往左规约到非终结符号，最终到达树根
-  - LA - LookAhead,向前预读一个token，帮助产生式冲突时识别正确的文法规则
-  - Go n = 1
+  - 向前预读 n 个token，帮助产生式冲突时识别正确的文法规则
   - 借助规约栈，规约表，实现复杂
 
 ---
@@ -272,6 +272,41 @@ Expression = UnaryExpr | Expression binary_op Expression
 ```
 Block 产生式的左边还有一个Block，因此嵌套自然诞生；Expression同理
 
+---
+## Go编译器源码
+```go
+func (p *parser) parseStmt() (s ast.Stmt) {
+    switch p.tok {
+	case token.CONST, token.TYPE, token.VAR:
+		s = &ast.DeclStmt{p.parseDecl()}
+    case token.GO:
+		s = p.parseGoStmt()
+	case token.DEFER:
+		s = p.parseDeferStmt()
+    //...
+    }
+}
+func (p *parser) parseGoStmt() ast.Stmt {
+	pos := p.expect(token.GO)
+	call := p.parseCallExpr()
+	p.expectSemi()
+	if call == nil {
+		return &ast.BadStmt{pos, pos + 2} // len("go")
+	}
+
+	return &ast.GoStmt{pos, call}
+}
+func (p *parser) parseDeferStmt() ast.Stmt {
+	pos := p.expect(token.DEFER)
+	call := p.parseCallExpr()
+	p.expectSemi()
+	if call == nil {
+		return &ast.BadStmt{pos, pos + 5} // len("defer")
+	}
+
+	return &ast.DeferStmt{pos, call}
+}
+```
 ---
 ## Go语法结构
 <style scoped>
@@ -385,7 +420,7 @@ raw_string_lit         = "`" { unicode_char | newline } "`" .
 interpreted_string_lit = `"` { unicode_value | byte_value } `"` .
 ```
 - 字符串类型表示字符串值的集合。![right w:200](image/gopher-doc-left.jpg)
-- 值是一个字节序列（可能是空）,长度
+- 值是一个字节序列（非字符，可能是空）,长度
 - 不可变的，一旦创建不可再更改。
 - 字符串常量，则长度是编译时常量。
 - 字节可以通过索引访问。
@@ -509,20 +544,93 @@ type sudog struct {
 ![bg right:70% 100%](./image/chan-send-unblock.gif)
 ## 发送者唤醒
 
+---
+# Go的设计
+![bg left:50% 80%](./image/gopher.gif)
+- defer
+- goroutine
+  - 并发
+  - 调度
+- GC
 
 ---
-## 并发
+## defer
+中文：延期；——延迟执行函数。
+```go
+DeferStmt = "defer" Expression . //Expression必须是函数或方法调用
+```
+- 函数body结束，执行return语句，或者panic时执行
+- 遇到 defer 时，执行正常解析计算，不立即执行函数调用
+   - 函数返回时才能够发现 defer 函数会不会 panic
+   - 如果一个 defer 在retrun语句之后，那么它不会被解析
+   - 函数体内的多个 defer，按照其在代码中的先后顺序，FILO栈原则
+   - defer 可以嵌套和递归，此递归不存在递归返回。
+- 函数入参压栈，出参丢弃；defer函数可以修改函数的返回值
+
+---
+## defer 实现
+![bg right:60% 100%](./image/go-defer.png)
+- deferproc/deferreturn
+- panic只执行G的defer
+
+---
+## 线程模型
+![bg vertical left:70% 100%](./image/threads-model.png)
+- N:1-用户
+- 1:1-内核
+- N:M-两级
+
+$$内存+CPU$$
+
+---
+## G-M模型
+![bg right:60% 100%](./image/gm.png)
+- 竞争
+- 局部化
+
+---
+## G-M-P模型
+![bg right:70% 100%](./image/gmp_pattern.jpeg)
+
+---
+## 同步
+>Do not communicate by sharing memory; instead, share memory by communicating.
+不要通过共享内存来通信，而应通过通信来共享内存。
+
+- Channel
+- WaitGroup/Mutex/RWMutex/Cond/Once
+
+---
+## GC
+
+---
+# Go的生态
+![bg left:50% 80%](./image/gopher.gif)
+- package
+- CGO
+
+---
+## 包的初始化
+![width:1200](./image/包的初始化流程图.png)
+
+--- 
+## 站在C/C++的肩上
+
+---
+# Thanks
+![bg left:55%](./image/gopher-music.png)
+
+---
 Go语言正是在多核和网络化的时代背景下诞生的原生支持并发的编程语言
 1. 多线程模型（内核多线程） - 大多数语言都支持
 2. 消息传递模型（CSP） - Erlang、Go
->Do not communicate by sharing memory; instead, share memory by communicating.
-不要通过共享内存来通信，而应通过通信来共享内存。
 
 ---
 ### 协程
 go func()
 1. 栈的空间大小问题
 2. 调度器
+
 ---
 ### 调度器
 * 半抢占式，只有在当前Goroutine发生阻塞时才会导致调度。同时发生在用户 态，调度器会根据具体函数只保存必要的寄存器，切换的代价要比系统线程低得 多。运行时有一个 runtime.GOMAXPROCS 变量，用于控制当前运行正常非阻塞 Goroutine的系统线程数目
@@ -532,24 +640,17 @@ go func()
 2. 调度成本低
 3. 栈空间的动态扩展
 4. 
-
+vertical
 ---
 ### 顺序一致性内存模型
 1. 多线程之间数据同步 —— 原子操作，同步锁
 2. 
 
 ---
-### 包的初始化
-![width:1200](./image/包的初始化流程图.png)
-
----
 ### 基于Channel的通信
 1. Channel通信是在Goroutine之间进行同步的主要方法
 2. 同一个Goroutine之间进行发送接收可能会导致死锁，通常是不同协程之间
 
---- 
-### 站在C/C++的肩上
-CGO
 
 ---
 参考
@@ -600,3 +701,9 @@ https://www.gushiciku.cn/pl/phYg/zh-hk
 https://learnku.com/docs/effective-go/2020/format/6237
 https://speakerdeck.com/kavya719/understanding-channels?slide=48
 https://levelup.gitconnected.com/how-does-golang-channel-works-6d66acd54753
+defer
+https://developpaper.com/detailed-explanation-of-golang-defer/
+
+GMP
+https://learnku.com/articles/41728
+https://medium.com/@ankur_anand/illustrated-tales-of-go-runtime-scheduler-74809ef6d19b
