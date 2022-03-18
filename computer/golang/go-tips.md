@@ -14,7 +14,7 @@ _paginate: false
 _Let's Go!_
 
 ---
-# Go的历史 [->](https://github.com/golang-design/history#language-design)
+# Go的历史 [->](https://github.com/golang-design/history)
 ![bg right:50% 70%](./image/go-design.svg) 
 
 ---
@@ -32,7 +32,7 @@ table {
   width: 100%;
 }
 </style>
-![w:800 center](./image/go-creator.jpeg)
+![w:800](./image/go-creator.jpeg)
 
 |Robert Griesemer|Rob Pike |Ken Thompson |
 |:---:|:---:|:---:|
@@ -54,10 +54,11 @@ table {
 
 ---
 ## Hello World
+- Brain Kernighan "版权所有"
 ![bg vertical left:50% 80%](./image/commit1.png)
 ![bg left:50% 80%](./image/helloworld.png)
 
-```B
+```
 main( ) {
 	extrn a, b, c;
 	putchar(a); putchar(b); putchar(c); putchar('!*n');
@@ -69,8 +70,13 @@ c 'orld';
 
 ```C
 main() {
-	printf("hello, world");
+	printfC("hello, world");
 }
+
+/*
+调试一段代码的难度是编写它们的两倍，因此如果你的代码写的尽可能巧妙，
+按照定义而言，你可能没有能力来调试它了—— Kernighan Law 
+*/
 ```
 
 ---
@@ -87,8 +93,9 @@ main() {
 - 很少，正交，通俗的概念
 - 支持线程和进程间通信
 - GC
-- 用 Go 编写的容器库(没有模板)-自举
+- 用 Go 编写的容器库(没有模板)
 - 相当高效，相当于C
+- 自举
 
 ---
 ## 编译流程
@@ -109,6 +116,7 @@ $$语法=文法+语义$$
 
 - 文法：描述语言的句法规则
 - 语义：解释文法的含义，限定文法推导的一个子集合法
+$$\int_{a}^{b}f(x)=\sum (fx)dx$$
 
 ---
 ## 上下文无关文法
@@ -446,7 +454,7 @@ MapType     = "map" "[" KeyType "]" ElementType .
 KeyType     = Type .
 ```
 - keyType的!=和==必须是明确定义；因此，function, map, slice不能作为主键
-- keyType是interface类型是，动态键值的比较运算必须已定义。否则，panic
+- keyType是interface类型，动态键值的比较运算必须已定义。否则，panic
 - 未初始化map为nil，不能添加元素，make创建空map
 - [key]索引或赋值/ len() / delete
 
@@ -528,21 +536,6 @@ type sudog struct {
 ![bg right:70% 55%](./image/chan-receive.gif)
 ## 发送
 ## 接收
----
-![bg right:70% 100%](./image/chan-receive-block.gif)
-## 接收者阻塞
-
----
-![bg right:70% 100%](./image/chan-receive-unblock.gif)
-## 接收者唤醒
-
----
-![bg right:70% 80%](./image/chan-send-block.gif)
-## 发送者阻塞
-
----
-![bg right:70% 100%](./image/chan-send-unblock.gif)
-## 发送者唤醒
 
 ---
 # Go的设计
@@ -593,7 +586,7 @@ $$内存+CPU$$
 ![bg right:70% 100%](./image/gmp_pattern.jpeg)
 
 ---
-## 同步
+## 同步与通信
 >Do not communicate by sharing memory; instead, share memory by communicating.
 不要通过共享内存来通信，而应通过通信来共享内存。
 
@@ -601,7 +594,33 @@ $$内存+CPU$$
 - WaitGroup/Mutex/RWMutex/Cond/Once
 
 ---
+![bg vertical right:70% 55%](./image/chan-send.gif)
+![bg right:70% 55%](./image/chan-receive.gif)
+## 发送
+## 接收
+---
+![bg right:70% 100%](./image/chan-receive-block.gif)
+## 接收者阻塞
+
+---
+![bg right:70% 100%](./image/chan-receive-unblock.gif)
+## 接收者唤醒
+
+---
+![bg right:70% 80%](./image/chan-send-block.gif)
+## 发送者阻塞
+
+---
+![bg right:70% 100%](./image/chan-send-unblock.gif)
+## 发送者唤醒
+
+---
 ## GC
+![bg right:60% 90%](./image/gc.gif)
+- 所有对象开始都是白色
+- 从 root 开始找到所有可达对象，标记为灰色，放入待处理队列
+- 遍历灰色对象队列，将其引用对象标记为灰色放入待处理队列，自身标记为黑色。
+- 处理完灰色对象队列，执行清扫工作。
 
 ---
 # Go的生态
@@ -610,100 +629,69 @@ $$内存+CPU$$
 - CGO
 
 ---
+## 包
+- 一个包只在一个目录下，一般包名和目录名相同
+- import 包
+  - 包路径 `import  "lib/math"`
+  - 重命名 `import ms "lib/math"`
+  - 本地化 `import . "lib/math"`
+- GOPATH/GOROOT | vendor | module
+---
 ## 包的初始化
 ![width:1200](./image/包的初始化流程图.png)
 
 --- 
 ## 站在C/C++的肩上
+- 包名后紧接着是/**/包含的完成C代码，然后 `import "C"`
+- C++是不可以直接使用的，需要用C代码包装一层
+- 强类型需要适配
+```C
+#include <stdlib.h>
+
+CPPObject NewCPPObject()
+{
+  return new CPPObject();
+}
+
+void Config(void* trans_api, char *user, char *passwd, char *ip, int port)
+{
+  ((CPPObject *)trans_api)->Config(user, passwd, ip, port);
+}
+```
+---
+```go
+package cppboject
+
+/*
+#cgo LDFLAGS: -L../lib -lcppboject
+#cgo CFLAGS: -I ../include
+#include <stdlib.h>
+*/
+import "C" 
+
+import (
+  "fmt"
+  "unsafe"
+)
+
+func (ta *AccTransApi) Init(user, passwd, addr string, port, timeout int32) error {
+  obj = C.NewCPPObject()
+
+  cUser := C.CString(user)
+  defer C.free(unsafe.Pointer(cUser))
+
+  cPasswd := C.CString(passwd)
+  defer C.free(unsafe.Pointer(cPasswd))
+
+  cAddr := C.CString(addr)
+  defer C.free(unsafe.Pointer(cAddr))
+
+  C.Config(obj, cUser, cPasswd, cAddr, C.int(port))
+
+  return nil 
+}
+```
 
 ---
 # Thanks
 ![bg left:55%](./image/gopher-music.png)
-
----
-Go语言正是在多核和网络化的时代背景下诞生的原生支持并发的编程语言
-1. 多线程模型（内核多线程） - 大多数语言都支持
-2. 消息传递模型（CSP） - Erlang、Go
-
----
-### 协程
-go func()
-1. 栈的空间大小问题
-2. 调度器
-
----
-### 调度器
-* 半抢占式，只有在当前Goroutine发生阻塞时才会导致调度。同时发生在用户 态，调度器会根据具体函数只保存必要的寄存器，切换的代价要比系统线程低得 多。运行时有一个 runtime.GOMAXPROCS 变量，用于控制当前运行正常非阻塞 Goroutine的系统线程数目
----
-### 优点
-1. 启动简洁方便性
-2. 调度成本低
-3. 栈空间的动态扩展
-4. 
-vertical
----
-### 顺序一致性内存模型
-1. 多线程之间数据同步 —— 原子操作，同步锁
-2. 
-
----
-### 基于Channel的通信
-1. Channel通信是在Goroutine之间进行同步的主要方法
-2. 同一个Goroutine之间进行发送接收可能会导致死锁，通常是不同协程之间
-
-
----
-参考
-### 编程上的正交
-从数学上引进正交这个词，用于表示指相互独立，相互间不可替代，并且可以组合起来实现其它功能。比如 if 和 for 语句是正交的，但 for 和 while 语句的功能是有重叠的。逻辑运算 not、and、or 也是正交的，其它复杂的逻辑运算都可以用这三种基本运算叠加起来。
-
-编程语言经常定义一组正交语法特性，相互间不可替代，组合起来可以其它功能。而为了更方便使用，在基础特性之上，再添加一些额外特性。这些非基本的额外特性，称为语法糖（Syntactic sugar）。语法糖对语言的功能没有太大影响，有可以，没有也可以，但有了之后，代码写起来更方便些。
-
-- small, concise, crisp —— 小，简洁，干脆
-- procedural —— 程序性
-- strongly typed —— 强类型
-- few, orthogonal, and general concepts —— 很少，正交，一般的概念
-- avoid repetition of declarations —— 避免重复声明
-
----
-- multi-threading support in the language —— 语言层面支持多线程
-- garbage collected —— GC
-- containers w/o templates —— 没有模板的容器
-- compiler can be written in Go and so can it's GC —— 自举
-- very fast compilation possible (1MLOC/s stretch goal) —— 编译十分快
-- reasonably efficient (C ballpark) —— 相当高效，相当于C
-- compact, predictable code —— 紧凑、可预测的代码
-  (local program changes generally have local effects)
-- no macros —— 没有宏
- ---
- go的提交点
- https://github.com/golang/go/commits/weekly.2009-11-06?before=9ad14c94db182dd3326e4c80053e0311f47700ce+3850&branch=weekly.2009-11-06
-
- ---
- January: First month
-2: Second day
-15: 3PM
-04: Fourth minute
-05: Fifth second
-2006: Sixth year of the new 21st century
-
----
-面向对象 Object Oriented
-面向过程 Procedural Programming
-
----
-
-如何判断chan已经关闭？使用select并且接收返回值。
-如果避免二次关闭，使用onlyonce或者recover
-https://www.gushiciku.cn/pl/phYg/zh-hk
-
-资料：
-https://learnku.com/docs/effective-go/2020/format/6237
-https://speakerdeck.com/kavya719/understanding-channels?slide=48
-https://levelup.gitconnected.com/how-does-golang-channel-works-6d66acd54753
-defer
-https://developpaper.com/detailed-explanation-of-golang-defer/
-
-GMP
-https://learnku.com/articles/41728
-https://medium.com/@ankur_anand/illustrated-tales-of-go-runtime-scheduler-74809ef6d19b
