@@ -82,85 +82,93 @@ func converTimeTag(timeTag string) (int64, int64) {
 func genSrt(oldTextLine []*TextLine) (newTextLine []*TextLine) {
     //开篇
     newTextLine = append(newTextLine, &TextLine{
-	ZH: "声明：本字幕由\"啊呜\"使用机器学习,自动翻译\nFFmpeg等工具合成,仅供观赏，不得用于商业用途！",
-	EN: "copyright:啊呜",
-	EndTime: 3000,
+		ZH: "声明：本字幕由\"啊呜\"使用机器学习,自动翻译\nFFmpeg等工具合成,仅供观赏，不得用于商业用途！",
+		EN: "copyright:啊呜",
+		EndTime: 5000,
     })
     
     for _, line := range oldTextLine {
-	// 总时间
-	sum := line.EndTime - line.StartTime	
-	// 总字数
-	sumChar := utf8.RuneCountInString(line.ZH)
-	// 标点断句
-	dots := strings.FieldsFunc(line.ZH, SplitZh)
-	// 每个字的时间
-	eachCharTime := int(sum)/(sumChar - len(dots))
-	// 初始化
-	start := line.StartTime
-	end := int64(0)
-	currDotLen := 0
-	currDot := ""
-	// 遍历短句
-	for _, dot := range dots {
-	    // 短句的长度
-	    dotLen := utf8.RuneCountInString(dot)
-	    // 累加短句，长度不超过32
-	    if currDotLen + dotLen < 32 {
-		if currDotLen == 0 {
-		    currDot = dot // 第一句
-		} else {
-		    currDot = fmt.Sprintf("%s, %s", currDot, dot) // 使用逗号分割
-		}
-		currDotLen += dotLen
-		continue
-	    }
-	    // curr长度足够,写入
-	    end = start + int64(currDotLen * eachCharTime)
-	    newTextLine = append(newTextLine, &TextLine {
-		ZH: currDot,
-		StartTime: start,
-		EndTime: end,
-	    })
-	    //写入后清空
-	    currDot = ""
-	    currDotLen = 0
-	    start = end + 100
+		// 总时间
+		sum := line.EndTime - line.StartTime	
+		// 总字数
+		sumChar := utf8.RuneCountInString(line.ZH)
+		// 标点断句
+		dots := strings.FieldsFunc(line.ZH, SplitZh)
+		// 每个字的时间
+		eachCharTime := int(sum)/(sumChar - len(dots))
+		// 初始化
+		start := line.StartTime
+		end := int64(0)
+		currDotLen := 0
+		currDot := ""
+		// 遍历短句
+		for _, dot := range dots {
+			// 短句的长度
+			dot = strings.TrimSpace(dot)
+			dotLen := utf8.RuneCountInString(dot)
+			if dotLen == 0 { // 空白行，跳过
+				continue
+			} 
+			// 尝试累加短句，长度不超过32, 累加
+			if currDotLen + dotLen < 32 {
+				if currDotLen == 0 {
+					currDot = dot // 第一句
+				} else {
+					currDot = fmt.Sprintf("%s, %s", currDot, dot) // 使用逗号分割
+				}
+				currDotLen += dotLen
+				continue //继续累加
+			} else {  // 累加超长，先把旧的写入
+				if currDotLen == 0 {
+					currDot = dot
+					currDotLen = dotLen
+					continue
+				}
 
-	    // 处理当前，新的开始
-	    if dotLen < 32 {
-		currDot = dot
-		currDotLen = dotLen
-	    } else { // 当前句子长度足够，直接写入,并对折
-		zhStr := []rune(dot)
-		end = start + int64(dotLen * eachCharTime)
-		newTextLine = append(newTextLine, &TextLine {
-		    ZH: fmt.Sprintf("%s\n%s", string(zhStr[:dotLen/2]), string(zhStr[dotLen/2:])),
-		    StartTime: start,
-		    EndTime: end,
-		})
-		// 修订时间
-	    	start = end + 100
-	    }
-	}
-	if currDotLen != 0 {
-	    newTextLine = append(newTextLine, &TextLine {
-		ZH: currDot,
-		StartTime: start,
-		EndTime: start + int64(currDotLen * eachCharTime),
-	    })
-	}
-	// 修订最后时间
-	newTextLine[len(newTextLine)-1].EndTime = line.EndTime
+				end = start + int64(currDotLen * eachCharTime)
+				tl := &TextLine {
+					StartTime: start,
+					EndTime: end,
+				}
+				// 过长拆分两行
+				if currDotLen > 32 {
+					zhStr := []rune(currDot)
+					if zhStr[currDotLen/2] == ','{ // 卡好分割点是标点，提到前半句
+						tl.ZH = fmt.Sprintf("%s\n%s", string(zhStr[:currDotLen/2+1]), string(zhStr[currDotLen/2+1:]))
+					} else {
+						tl.ZH = fmt.Sprintf("%s\n%s", string(zhStr[:currDotLen/2]), string(zhStr[currDotLen/2:]))
+					}
+				} else {
+					tl.ZH = currDot
+				}
+				newTextLine = append(newTextLine, tl)
+
+				// 重新累加
+				currDot = dot
+				currDotLen = dotLen
+			} 
+			start = end + 100
+		}
+
+		// 此段落结束，因为每个段落的语速不同，时间差不同，不跨段整合，这里写出剩余部分
+		if currDotLen != 0 {
+			newTextLine = append(newTextLine, &TextLine {
+				ZH: currDot,
+				StartTime: start,
+				EndTime: start + int64(currDotLen * eachCharTime),
+			})
+		}
+		// 修订最后时间
+		newTextLine[len(newTextLine)-1].EndTime = line.EndTime
     }
 
     //结束
     end := newTextLine[len(newTextLine)-1].EndTime
     newTextLine = append(newTextLine, &TextLine{
-	ZH: "谢谢观赏，请点赞关注！",
-	EN: "copyright:啊呜",
-	StartTime: end - int64(3000),
-	EndTime: end,
+		ZH: "谢谢观赏，请点赞关注！",
+		EN: "copyright:啊呜",
+		StartTime: end - int64(5000),
+		EndTime: end,
     })
     
     return
@@ -233,7 +241,7 @@ func main() {
 	    fmt.Println(*response.Response.TargetText)
 	    tl.ZH = *response.Response.TargetText
 	    textLine = append(textLine, tl)
-	    time.Sleep(200 * time.Millisecond)
+	    time.Sleep(250 * time.Millisecond)
 	}
 
 	if err := scanner.Err(); err != nil {
