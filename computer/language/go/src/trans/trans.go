@@ -201,8 +201,8 @@ func writeSrt(filePath string, textLine []*TextLine) error {
 }
 
 func main() {
-    	if len(os.Args) != 3 {
-	    fmt.Println("缺少参数")
+    if len(os.Args) != 3 {
+	    fmt.Println("缺少参数: ./trans input output")
 	    return
 	}
         request := tmt.NewTextTranslateRequest()
