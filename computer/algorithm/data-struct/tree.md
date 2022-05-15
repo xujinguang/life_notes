@@ -2,9 +2,9 @@
 
 树由于其结构特性，非常适合使用递归来解决。但是要明白递归的限制是栈的深度。如果树的高度超过64，那么会引发栈溢出。一般不会超过这个深度。所以绝大多数树的操作使用递归都是没有问题的。
 
-### 1.检测二叉树
+## 1.检测二叉树
 
-#### 1.1 j检测平衡二叉树 
+### 1.1 j检测平衡二叉树 
 
 需要一个获取左右子树深度的辅助函数。如果某一层不是平衡二叉树，则直接层层返回。
 
@@ -38,7 +38,7 @@ public:
 };
 ```
 
-#### 1.2 检测搜索二叉树
+### 1.2 检测搜索二叉树
 
 有两个思路，第一个就是中序遍历，将树序列化。如果中序遍历有序，则二叉树是搜索二叉树，否则不是。所以时间复杂度是`O(n)`.
 
@@ -95,9 +95,9 @@ private:
 
 
 
-### 2. 子树操作
+## 2. 子树操作
 
-#### 2.1 删除匹配子树
+### 2.1 删除匹配子树
 
 删除操作重点是从父节点角度来操作，否则无法修改父节点的指针，好比链表要首先找到前驱来删除指定节点。
 
@@ -131,7 +131,7 @@ public:
 };
 ```
 
-#### 2.2 检测B树是不是A的子树
+### 2.2 检测B树是不是A的子树
 
 ```c++
 /**
@@ -168,13 +168,13 @@ public:
 
 
 
-### 3. 二叉树遍历
+## 3. 二叉树遍历
 
-#### 3.1 前序遍历
+### 3.1 前序遍历
 
-#### 3.2 中序遍历
+### 3.2 中序遍历
 
-##### 3.2.1 中序遍历并调树为右分支单链表
+#### 3.2.1 中序遍历并调树为右分支单链表
 
 ```c++
 //思路1：先找到头，设定当前节点指针，然后中序递归调整每个节点
@@ -235,7 +235,7 @@ public:
 };
 ```
 
-##### 3.2.2 二叉查找树第K个最大数
+#### 3.2.2 二叉查找树第K个最大数
 
 ```c++
 class Solution {
@@ -262,11 +262,11 @@ private:
 
 查找二叉树特点是左边小，右边大。中序遍历先访问右边，再访问左边，就是逆序排列。递归过程中减少计数器。当计数器归0了节点就是第K个值。
 
-#### 3.3 后序遍历
+## 3.3 后序遍历
 
-#### 3.4 层级遍历
+## 3.4 层级遍历
 
-##### 3.4.1 每层节点值以链表形式返回
+### 3.4.1 每层节点值以链表形式返回
 
 ```c++
 /**
@@ -318,7 +318,7 @@ public:
 };
 ```
 
-##### 3.4.2 每层作为二维数组行输出二叉树
+### 3.4.2 每层作为二维数组行输出二叉树
 
 这个和上面的一题基本一致，只是一个是建立单链表，这个是使用数组。上面一题使用一个数组记录每层的树节点值，并使用一个分界指针指定当前层和下一层在数组中的分割点方便遍历。遍历结束记录数组中包含所有树的节点。这个空间复杂度是`O(n)`，因此还有另外一种降低空间复杂度的方式就是使用两个队列。
 
@@ -356,3 +356,66 @@ public:
 
 时间复杂度没有变化，都是`O(n)`.	
 
+## 3.5 先序中序遍历数组构建二叉树
+```c
+struct TreeNode* createTree(int* preorder, int preorderSize, int* curr,
+ int* inorder, int start, int end) {
+     if(*curr >= preorderSize)
+        return NULL;
+     struct TreeNode* node = malloc(sizeof(struct TreeNode));
+     node->val = preorder[*curr];
+     int i;
+     for(i = start; i <= end; i++) {
+         if(inorder[i] == preorder[*curr]) break;
+     }
+     if(i > start) {//创建左子树
+        (*curr)++;
+        node->left = createTree(preorder, preorderSize, curr, inorder, start, i - 1);
+     } else {
+         node->left = NULL;
+     }
+     if(i < end) { //创建右子树
+         (*curr)++;
+         node->right = createTree(preorder, preorderSize, curr, inorder, i + 1, end);
+     } else {
+         node->right = NULL;
+     }
+    return node;
+}
+
+struct TreeNode* buildTree(int* preorder, int preorderSize, int* inorder, int inorderSize){
+    int curr = 0;
+    return createTree(preorder, preorderSize, &curr, inorder, 0, inorderSize - 1);
+}
+```
+
+## 3.6 二叉树转成单链表
+```c
+// prev记录先序遍历的前驱节点
+void createFlatten(struct TreeNode* root, struct TreeNode **prev) {
+    // 暂时存储左右节点
+    struct TreeNode* left = root->left;
+    struct TreeNode* right = root->right;
+    //如果不是树根，则修订前驱的左右指针
+    if(*prev != NULL) {
+        (*prev)->left = NULL;
+        (*prev)->right = root;
+    }
+    //更新前驱节点
+    *prev = root;
+    // 遍历左子树
+    if(left)
+        createFlatten(left, prev);
+    // 遍历右子树
+    if(right)
+        createFlatten(right, prev);
+}
+
+void flatten(struct TreeNode* root){
+    if(root == NULL) return;
+    struct TreeNode* prev = NULL;
+    createFlatten(root, &prev);
+}
+//方法2:使用一个队列记录先序遍历的节点指针，然后遍历队列逐个修订指针
+/*这两个方法的时间和空间复杂度是一样的，当时递归更好一些，因为好理解，同时解决了动态分配队列的问题*/
+```
