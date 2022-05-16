@@ -31,6 +31,10 @@ void rotate(int** matrix, int matrixSize, int* matrixColSize){
     }
 }
 
+/*
+1. 逆时针旋转90度 - 上下对换，副对角线翻转
+2. 
+
 int main() {
     int a[3][3], b[4][4];
     int tmp;

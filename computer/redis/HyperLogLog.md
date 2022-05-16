@@ -2,7 +2,7 @@
 
 ### 需求
 
-1. UV
+1. UV - 网站的访问用户量、网站的请求IP量
 2. 关键词搜索
 3. 数据分析
 
@@ -102,11 +102,17 @@ pf是算法发明人的`Philippe Flajolet`的首字母。
 
 #### 12KB
 
-redis中实现用的$$2^{14}=16384$$个桶，每个桶占用 `6`个`bit`,为什么是6个。因为redis将value哈希成`64bit`值，分桶占去14个，剩余50个bit，最坏情况下，低位第一个1出现在第50个bit，那么需要最少6bit ：$$2^{6}=64 > 50$$ 来表示这个位置。所以每个桶用6bit。最后的大小
+redis中实现用的
+$$2^{14}=16384$$
 
+个桶，每个桶占用 `6`个`bit`,为什么是6个。因为redis将value哈希成`64bit`值，分桶占去14个，剩余50个bit，最坏情况下，低位第一个1出现在第50个bit，那么需要最少6bit ：
+$$2^{6}=64 > 50$$
+来表示这个位置。所以每个桶用6bit。最后的大小
 <img src="https://render.githubusercontent.com/render/math?math=\large \frac{2^{14} \times 6  (bits)}{2^{13}} = 2 \times 6(KB) = 12KB">
+
+一个对象的UV统计占用`12kb`,如果有个`n`个对象的uv需要统计，那么需要
+$$n*12$$
 
 ### 参考资料
 
 [HyperLogLog Wiki](https://en.wikipedia.org/wiki/HyperLogLog)
-
