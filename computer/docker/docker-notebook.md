@@ -270,35 +270,35 @@ Docker不会直接和内核交互，而是通过更底层的Libcontainer与内�
 3. cpuset/cpu/cpuacct/memory/blkio/devices子系统
 4. docker的exec通过setns实现
 
-####2.4 Namespace
+#### 2.4 Namespace
 
 namespace包括6种：IPC，Newwork，Mount，PID，UTS，User
 
-#####UTS
+##### UTS
 
 对主机名和域名进行隔离
 
-#####IPC
+##### IPC
 
 inter process communication - 进程间通信
 
-#####PID
+##### PID
 
 隔离ns下的进程ID
 
-#####mount
+##### mount
 
 隔离文件挂载点的
 
-#####network
+##### network
 
 每个netword都有自己的网络设备，IP地址，路由表，net目录，端口号。
 
-#####user
+##### user
 
 隔离用户和组ID
 
-###第三章 理解Docker镜像
+### 第三章 理解Docker镜像
 
 把运行环境和应用一起打包
 
@@ -315,7 +315,7 @@ ImageID镜像最上层的layer id即为镜像的ID
 * 显示悬挂镜像 —filer "dangling=true" 显示无名无 tag 的镜像，此镜像不会被任何镜像依赖，一般属于垃圾，最好删除
 * 分析分层依赖使用工具dockviz
 
-#####Build
+##### Build
 
 1. 下载镜像
 2. 导入save的镜像 `docker save -o busybox.tar busybox; docker load -i busybox.tar`
@@ -544,8 +544,3 @@ kubectl scale deployment/istio-ingressgateway --replicas=0 -n istio-system && ku
 gw=`kubectl get pods --field-selector=status.phase==Running -l app=istio-ingressgateway -n istio-system -o=jsonpath='{.items[0].metadata.name}'`
 kubectl describe pod $gw -n istio-system
 ```
-
-
-
-
-
