@@ -19,8 +19,11 @@ case $1 in
 	"ca") # 提前视频的音频
 		ffmpeg -i $2 -vn -y -acodec copy ${filename}_${time_prefix}.m4a
 	;;
-	"af") # 给视频添加字幕
+	"af") # 给视频添加字幕 srt格式
 		ffmpeg -i $2 -vf subtitles=$3  ${filename}_${time_prefix}.mp4
+	;;
+	"cut") #裁减视频
+		ffmpeg -ss 00:00:00 -t $3 -i $2 -vcodec copy -acodec copy ${filename}_${time_prefix}.mp4
 	;;
 	*)
 		echo "invalid param $1"
