@@ -25,8 +25,12 @@ case $1 in
 	"cut") #裁减视频
 		ffmpeg -ss 00:00:00 -t $3 -i $2 -vcodec copy -acodec copy ${filename}_${time_prefix}.mp4
 	;;
+  "osx-audio") # mac捕捉音频 ffmpeg -f avfoundation -list_devices true -i ""
+		ffmpeg -f avfoundation -i :0 audio_${time_prefix}.wav
+  ;;
 	*)
 		echo "invalid param $1"
 	;;
 esac
 
+# ffmpeg -f avfoundation -i "1" -vcodec libx264 -preset ultrafast -acodec libfaac -f flv ~/Movies/output.flv
