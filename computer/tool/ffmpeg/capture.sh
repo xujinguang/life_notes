@@ -26,7 +26,7 @@ case $1 in
 		ffmpeg -ss 00:00:00 -t $3 -i $2 -vcodec copy -acodec copy ${filename}_${time_prefix}.mp4
 	;;
   "osx-audio") # mac捕捉音频 ffmpeg -f avfoundation -list_devices true -i ""
-		ffmpeg -f avfoundation -i :0 audio_${time_prefix}.wav
+		ffmpeg -f avfoundation  -i :0 -ar 44100 audio_${time_prefix}.wav
   ;;
 	*)
 		echo "invalid param $1"
