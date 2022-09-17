@@ -23,7 +23,7 @@
 
 
 
-1. 物理机-》虚拟机-》IaaS-》PaaS-》Docker-》FaaS
+1. 物理机-》虚拟机-》IaaS-》PaaS-》容器-》FaaS
 2. FaaS的特点
 
 ##### 无服务器的优势
