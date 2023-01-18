@@ -762,3 +762,7 @@ http://km.oa.com/group/19253/articles/show/261601?kmref=search&from_page=27&no=4
 http://km.oa.com/articles/show/445305?kmref=search&from_page=10&no=2
 
 https://learnku.com/go/t/39490
+
+[《Understanding Real-World Concurrency Bugs in Go》](https://songlh.github.io/paper/go-study.pdf)
+
+[Go2.0草案](https://go.googlesource.com/proposal/+/master/design/go2draft.md)
